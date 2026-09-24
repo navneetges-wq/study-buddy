@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="default">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Study Buddy — Plan less. Focus better.</title>
+<meta name="description" content="A study companion that learns how you study: focus timer, distraction tracking, voice journal and personal focus insights.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="banner-slot" class="banner-slot"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">📚</span>
+    <div>
+      <h1>Study Buddy</h1>
+      <p class="tagline">Plan less. Focus better. Understand how you study.</p>
+    </div>
+  </div>
+  <div class="chips">
+    <button class="chip" id="chip-weather" title="Focus weather">🌡️ <span>Set location</span></button>
+    <div class="chip" id="chip-streak" title="Study streak">🔥 <span>0 days</span></div>
+    <div class="chip" id="chip-goal" title="Today vs daily goal">🎯 <span>0 / 60m</span></div>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab is-active" data-view="today">Today</button>
+  <button class="tab" data-view="plan">Plan</button>
+  <button class="tab" data-view="insights">Insights</button>
+  <button class="tab" data-view="journal">Journal</button>
+</nav>
+
+<main>
+
+<!-- ============================ TODAY ============================ -->
+<section class="view is-active" id="view-today">
+
+  <div class="card quote-card">
+    <div class="card-head">
+      <h2>💬 Today's push</h2>
+      <button class="ghost-btn" id="quote-refresh" title="Get another quote">↻</button>
+    </div>
+    <blockquote id="quote-text">Loading a quote…</blockquote>
+    <cite id="quote-author"></cite>
+  </div>
+
+  <div class="card focus-card" id="focus-card">
+    <div class="card-head">
+      <h2 id="focus-title">⏱️ Focus session</h2>
+      <span class="pill" id="focus-state">Idle</span>
+    </div>
+
+    <div class="focus-body">
+    <div class="dial-wrap">
+      <svg class="dial" viewBox="0 0 200 200" aria-hidden="true">
+        <circle class="dial-track" cx="100" cy="100" r="86"></circle>
+        <circle class="dial-prog" id="dial-prog" cx="100" cy="100" r="86"
+                stroke-dasharray="540.35" stroke-dashoffset="540.35"></circle>
+      </svg>
+      <div class="dial-center">
+        <div class="dial-time" id="dial-time">25:00</div>
+        <div class="dial-sub" id="dial-sub">ready when you are</div>
+      </div>
+    </div>
+
+    <div class="focus-side">
+
+    <div class="setup" id="setup-row">
+      <label for="duration-input">Session length</label>
+      <div class="dur-row">
+        <button class="dur" data-dur="15">15m</button>
+        <button class="dur is-on" data-dur="25">25m</button>
+        <button class="dur" data-dur="45">45m</button>
+        <button class="dur" data-dur="60">60m</button>
+        <input type="number" id="duration-input" min="1" max="240" value="25" aria-label="Custom minutes">
+        <span class="unit">min</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn primary" id="btn-start">▶ Start focusing</button>
+      <button class="btn" id="btn-pause" hidden>⏸ Pause</button>
+      <button class="btn" id="btn-extend" hidden>+5 min</button>
+      <button class="btn" id="btn-finish" hidden>✓ Finish</button>
+      <button class="btn danger-ghost" id="btn-cancel" hidden>Discard</button>
+      <button class="btn" id="btn-skip-break" hidden>Skip break</button>
+    </div>
+
+    <div class="live" id="live-stats" hidden>
+      <div><span class="k">Focused</span><b id="live-focus">0m 00s</b></div>
+      <div><span class="k">Away</span><b id="live-away">0m 00s</b></div>
+      <div><span class="k">Tab switches</span><b id="live-tabs">0</b></div>
+      <div><span class="k">Distractions</span><b id="live-dist">0</b></div>
+    </div>
+    </div><!-- /focus-side -->
+    </div><!-- /focus-body -->
+
+    <div class="distract" id="distract-row" hidden>
+      <span class="k">Got pulled away? Log it:</span>
+      <div class="dbtns">
+        <button class="dchip" data-d="phone">📱 Phone</button>
+        <button class="dchip" data-d="daydream">💭 Daydreaming</button>
+        <button class="dchip" data-d="people">👥 People</button>
+        <button class="dchip" data-d="tired">😴 Tired</button>
+        <button class="dchip" data-d="hungry">🍔 Hungry</button>
+        <button class="dchip" data-d="other">✍️ Other</button>
+      </div>
+    </div>
+
+    <div class="queue" id="queue-row" hidden></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>⚡ I have X minutes</h2></div>
+    <p class="muted">Tell me the time you've actually got. I'll shape it into blocks so you don't have to decide.</p>
+    <div class="row">
+      <input type="number" id="have-input" min="5" max="300" placeholder="35" aria-label="Minutes available">
+      <button class="btn" id="have-btn">Shape my time</button>
+    </div>
+    <div id="have-plan" class="plan-preview" hidden></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>🚀 Can't get started?</h2></div>
+    <p class="muted">Commit to something tiny. Starting is the whole trick.</p>
+    <div class="row">
+      <button class="btn" data-just="5">5 min</button>
+      <button class="btn" data-just="10">10 min</button>
+      <button class="btn" data-just="15">15 min</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>🎵 Focus sound</h2>
+      <span class="pill" id="sound-state">Off</span>
+    </div>
+    <div class="sounds" id="sounds">
+      <button class="schip" data-s="rain">🌧️ Rain</button>
+      <button class="schip" data-s="waves">🌊 Waves</button>
+      <button class="schip" data-s="cafe">☕ Café</button>
+      <button class="schip" data-s="night">🌙 Night</button>
+      <button class="schip" data-s="lofi">📻 Lo-fi</button>
+      <button class="schip" data-s="white">⚪ White noise</button>
+      <button class="schip" data-s="brown">🟤 Brown noise</button>
+    </div>
+    <div class="row vol-row">
+      <button class="btn" id="sound-toggle">▶ Play</button>
+      <input type="range" id="volume" min="0" max="100" value="50" aria-label="Volume">
+      <label class="check"><input type="checkbox" id="auto-ambience"> start with session</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>🎯 Daily goal</h2></div>
+    <div class="row">
+      <input type="number" id="goal-input" min="5" max="600" step="5" aria-label="Daily goal minutes">
+      <span class="unit">min / day</span>
+    </div>
+    <div class="bar"><div class="bar-fill" id="goal-bar"></div></div>
+    <p class="muted" id="goal-text">—</p>
+  </div>
+</section>
+
+<!-- ============================ PLAN ============================ -->
+<section class="view" id="view-plan">
+  <div class="card">
+    <div class="card-head"><h2>📅 Plan a session</h2></div>
+    <div class="row wrap">
+      <label class="field"><span>When</span><input type="datetime-local" id="plan-when"></label>
+      <label class="field"><span>How long</span><input type="number" id="plan-dur" min="5" max="240" value="25"></label>
+      <button class="btn primary" id="plan-add">Add to plan</button>
+    </div>
+    <div class="voice-box">
+      <button class="btn voice" id="plan-voice">🎙️ Plan by voice</button>
+      <span class="muted">Try: <i>“Study for 40 minutes at 8 PM”</i> or <i>“45 minute session in 2 hours”</i></span>
+      <div class="heard" id="plan-heard" hidden></div>
+    </div>
+    <div class="row">
+      <button class="btn small" id="notif-btn">🔔 Enable reminder notifications</button>
+      <span class="muted" id="notif-state"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>🔔 Upcoming</h2></div>
+    <div id="upcoming-list" class="list"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>🗂️ Past plans</h2></div>
+    <div id="past-list" class="list"></div>
+  </div>
+</section>
+
+<!-- ============================ INSIGHTS ============================ -->
+<section class="view" id="view-insights">
+  <div class="card">
+    <div class="card-head"><h2>📊 Your numbers</h2></div>
+    <div class="stat-grid" id="stat-grid"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>📈 Last 7 days</h2></div>
+    <div class="chart" id="chart"></div>
+  </div>
+
+  <div class="card fingerprint">
+    <div class="card-head"><h2>🧬 Focus Fingerprint</h2></div>
+    <div id="fingerprint"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>📵 Distraction breakdown <span class="muted">(last 7 days)</span></h2></div>
+    <div id="distract-breakdown"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>🔥 Streak</h2></div>
+    <div id="streak-box"></div>
+  </div>
+</section>
+
+<!-- ============================ JOURNAL ============================ -->
+<section class="view" id="view-journal">
+  <div class="card">
+    <div class="card-head"><h2>📋 Session history</h2><span class="muted" id="journal-count"></span></div>
+    <div id="history-list" class="list"></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  Data lives in this browser only (localStorage). Quotes from DummyJSON · Weather from Open-Meteo.
+  <button class="linky" id="wipe">Erase all my data</button>
+</footer>
+
+<!-- ============================ AUTOPSY MODAL ============================ -->
+<div class="modal-back" id="autopsy" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="autopsy-title">
+    <div class="modal-head">
+      <h2 id="autopsy-title">Session complete 🎉</h2>
+      <button class="ghost-btn" id="autopsy-close" aria-label="Close">✕</button>
+    </div>
+
+    <div class="autopsy-grid" id="autopsy-grid"></div>
+
+    <div class="mood">
+      <span class="k">How did it feel?</span>
+      <div class="moods" id="moods">
+        <button class="mchip" data-m="great">🤩 Great</button>
+        <button class="mchip" data-m="good">🙂 Good</button>
+        <button class="mchip" data-m="ok">😐 OK</button>
+        <button class="mchip" data-m="rough">😕 Rough</button>
+        <button class="mchip" data-m="bad">😫 Bad</button>
+      </div>
+    </div>
+
+    <div class="journal-box">
+      <div class="row between">
+        <span class="k">🎙️ One-minute voice journal</span>
+        <span class="pill" id="rec-timer">60s</span>
+      </div>
+      <p class="muted" id="rec-hint">60 seconds — how did your session go?</p>
+      <div class="row">
+        <button class="btn voice" id="rec-btn">🎙️ Start reflection</button>
+        <button class="btn small" id="rec-type">⌨️ Type instead</button>
+      </div>
+      <textarea id="journal-text" rows="4" placeholder="Your reflection appears here — you can edit it before saving."></textarea>
+    </div>
+
+    <div class="modal-foot">
+      <div id="autopsy-next" class="next-suggest"></div>
+      <button class="btn primary" id="autopsy-save">Save session</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/store.js"></script>
+<script src="js/ambience.js"></script>
+<script src="js/services.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
