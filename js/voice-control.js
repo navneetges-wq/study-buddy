@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
-   voice-control.js — hands-free Study Buddy.
+   voice-control.js — hands-free ally.
 
    One recognition stream owns the microphone, restarts itself when the
    browser cuts it off, strips a wake word, matches the phrase against a
@@ -18,7 +18,9 @@ const VoiceControl = (function () {
   let hooks = {};
   let requireWake = true;
 
-  const WAKE = /^\s*(?:hey\s+|ok(?:ay)?\s+)?(?:study\s+)?(?:buddy|body|buddie|buddy's)[\s,]*/i;
+  /* Speech recognition mishears short names constantly, so accept the
+     near-misses too ("alley", "ali", "allie") and keep the old name working. */
+  const WAKE = /^\s*(?:hey\s+|ok(?:ay)?\s+)?(?:ally|allie|alli|alie|ali|alley|rally|buddy)[\s,]*/i;
 
   /* ------------------------------ grammar ------------------------------ */
   /* Order matters: the first rule that matches wins, so put the specific
@@ -273,7 +275,7 @@ const VoiceControl = (function () {
 
   /** Run a command as if it had been spoken — used by the typed fallback box. */
   function simulate(text) {
-    const parsed = parse(requireWake && !WAKE.test(text) ? 'buddy ' + text : text);
+    const parsed = parse(requireWake && !WAKE.test(text) ? 'ally ' + text : text);
     if (parsed) hooks.onIntent && hooks.onIntent(parsed);
     return parsed;
   }

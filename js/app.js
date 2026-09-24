@@ -10,15 +10,15 @@ const CIRC = 540.35;                    // 2πr for the progress dial (r = 86)
 const MIN = 60000;
 
 const DISTRACTIONS = {
-  tab:      { emoji: '🪟', label: 'Left the study tab' },
-  phone:    { emoji: '📱', label: 'Phone' },
-  daydream: { emoji: '💭', label: 'Daydreaming' },
-  people:   { emoji: '👥', label: 'People' },
-  tired:    { emoji: '😴', label: 'Tired' },
-  hungry:   { emoji: '🍔', label: 'Hungry' },
-  other:    { emoji: '✍️', label: 'Other' }
+  tab:      { emoji: '', label: 'Left the tab' },
+  phone:    { emoji: '', label: 'Phone' },
+  daydream: { emoji: '', label: 'Daydreaming' },
+  people:   { emoji: '', label: 'People' },
+  tired:    { emoji: '', label: 'Tired' },
+  hungry:   { emoji: '', label: 'Hungry' },
+  other:    { emoji: '', label: 'Other' }
 };
-const MOODS = { great: '🤩 Great', good: '🙂 Good', ok: '😐 OK', rough: '😕 Rough', bad: '😫 Bad' };
+const MOODS = { great: 'Great', good: 'Good', ok: 'OK', rough: 'Rough', bad: 'Bad' };
 
 /* ------------------------------ helpers ------------------------------ */
 const pad = n => String(n).padStart(2, '0');
@@ -118,6 +118,7 @@ function startFocus(minutes, kind, planId) {
     paintSound();
   }
   if (planId) Store.setPlanned(planId, { status: 'started' });
+  zenOff = false;                      // every new session opens in full-screen focus
   renderTimer(); renderPlanLists();
 }
 
@@ -149,12 +150,14 @@ function discard(skipConfirm) {
   if (!A) return;
   if (!skipConfirm && !confirm('Discard this session? Nothing will be saved.')) return;
   A = null; Store.saveActive(null);
+  leaveZen();
   renderTimer();
 }
 
 function finish(auto) {
   if (!A) return;
   const s = A; A = null; Store.saveActive(null);
+  leaveZen();
   const record = {
     id: s.id, kind: s.kind, plannedMs: s.plannedMs,
     startedAt: s.startedAt, endedAt: Date.now(),
@@ -173,7 +176,7 @@ function finish(auto) {
   lastGain = gained;
   if (record.roomId) reportToRoom(record);
   Ambience.chime(true);
-  if (auto) Notify.push('Session complete 🎉', `${fmtDur(record.focusedMs)} of focus. Time for your reflection.`);
+  if (auto) Notify.push('Session complete', `${fmtDur(record.focusedMs)} of focus. Time for your reflection.`);
   openAutopsy(record);
   renderAll();
 }
@@ -185,9 +188,10 @@ function startBreak(minutes) {
 }
 function endBreak(silent) {
   brk = null;
+  leaveZen();
   if (!silent) {
     Ambience.chime(false);
-    Notify.push('Break over ☕', 'Ready for the next block?');
+    Notify.push('Break over', 'Ready for the next block?');
   }
   const next = nextQueueBlock();
   if (next && next.type === 'focus') {
@@ -233,8 +237,15 @@ document.addEventListener('visibilitychange', () => {
 });
 
 /* ============================== RENDERING ============================== */
+let zenOff = false;                    // the user chose to leave full-screen focus
+function syncZen() {
+  if (A || brk) document.body.classList.toggle('focus-mode', !zenOff);
+}
+function leaveZen() { zenOff = false; document.body.classList.remove('focus-mode'); }
+
 function renderTimer() {
   const state = $('#focus-state'), sub = $('#dial-sub'), time = $('#dial-time');
+  syncZen();
   const running = !!A, onBreak = !!brk;
 
   $('#setup-row').hidden = running || onBreak;
@@ -251,11 +262,11 @@ function renderTimer() {
     const remaining = Math.max(0, A.plannedMs - A.focusedMs);
     time.textContent = fmtClock(remaining);
     $('#dial-prog').style.strokeDashoffset = CIRC * (1 - Math.min(1, A.focusedMs / A.plannedMs));
-    $('#focus-title').textContent = A.kind === 'micro' ? '🚀 Just-start session' : '⏱️ Focus session';
+    $('#focus-title').textContent = A.kind === 'micro' ? 'Just-start session' : 'Focus session';
     if (A.paused) { state.textContent = 'Paused'; state.className = 'pill paused'; sub.textContent = 'paused — the clock is waiting'; }
     else if (document.hidden) { state.textContent = 'Away'; state.className = 'pill away'; sub.textContent = 'you left the tab'; }
     else { state.textContent = 'Focusing'; state.className = 'pill live'; sub.textContent = `of ${fmtShort(A.plannedMs)} planned`; }
-    $('#btn-pause').textContent = A.paused ? '▶ Resume' : '⏸ Pause';
+    $('#btn-pause').textContent = A.paused ? 'Resume' : 'Pause';
     $('#live-focus').textContent = fmtDur(A.focusedMs);
     $('#live-away').textContent = fmtDur(A.awayMs);
     $('#live-tabs').textContent = A.tabSwitches;
@@ -264,14 +275,14 @@ function renderTimer() {
     const remaining = Math.max(0, brk.endsAt - Date.now());
     time.textContent = fmtClock(remaining);
     $('#dial-prog').style.strokeDashoffset = CIRC * (remaining / brk.totalMs);
-    $('#focus-title').textContent = '☕ Break';
+    $('#focus-title').textContent = 'Break';
     state.textContent = 'Break'; state.className = 'pill';
     sub.textContent = 'stand up, look out a window';
   } else {
     const mins = currentDuration();
     time.textContent = fmtClock(mins * MIN);
     $('#dial-prog').style.strokeDashoffset = CIRC;
-    $('#focus-title').textContent = '⏱️ Focus session';
+    $('#focus-title').textContent = 'Focus session';
     state.textContent = 'Idle'; state.className = 'pill';
     sub.textContent = 'ready when you are';
   }
@@ -288,7 +299,7 @@ function renderQueue() {
   row.hidden = false;
   row.innerHTML = '<span class="k">Your plan</span>' + queue.map((b, i) => {
     const cls = i < queueDone - 1 ? 'done' : i === queueDone - 1 ? 'now' : '';
-    return `<span class="qstep ${cls}">${b.type === 'break' ? '☕' : '🎯'} ${b.min}m</span>`;
+    return `<span class="qstep ${cls}">${b.type === 'break' ? 'Break' : 'Focus'} ${b.min}m</span>`;
   }).join('');
 }
 
@@ -300,10 +311,10 @@ function currentDuration() {
 /* ------------------------------ chips / goal ------------------------------ */
 function renderChips() {
   const st = Store.streak();
-  $('#chip-streak').innerHTML = `🔥 <span>${st.current} day${st.current === 1 ? '' : 's'}</span>`;
+  $('#chip-streak').textContent = `${st.current} day${st.current === 1 ? '' : 's'} streak`;
   const goal = Store.state.settings.dailyGoalMin;
   const today = Store.todayMs();
-  $('#chip-goal').innerHTML = `🎯 <span>${Math.round(today / MIN)} / ${goal}m</span>`;
+  $('#chip-goal').textContent = `${Math.round(today / MIN)} / ${goal}m`;
   const pct = Math.min(100, (today / (goal * MIN)) * 100);
   $('#goal-bar').style.width = pct + '%';
   $('#goal-text').textContent = today >= goal * MIN
@@ -382,27 +393,27 @@ function renderInsights() {
       ${fp('Most productive day', f.bestDay)}
       ${fp('Sessions finished in full', f.finishRate + '%')}
     </div>` : `
-    <p class="muted">Study ${f.need - f.have} more session${f.need - f.have === 1 ? '' : 's'} and Study Buddy
+    <p class="muted">Study ${f.need - f.have} more session${f.need - f.have === 1 ? '' : 's'} and ally
     will have enough to describe how you focus — when you're sharpest, how long you last, what pulls you away.</p>`;
 
   const split = Store.distractionSplit();
   $('#distract-breakdown').innerHTML = split.total ? `
     <p class="headline">Your biggest distraction this week:
-      <b>${DISTRACTIONS[split.rows[0].type]?.emoji || '•'} ${DISTRACTIONS[split.rows[0].type]?.label || split.rows[0].type}
+      <b>${DISTRACTIONS[split.rows[0].type]?.label || split.rows[0].type}
       — ${split.rows[0].pct}%</b></p>
     ${split.rows.map(r => `<div class="dbar">
-      <div class="top"><span>${DISTRACTIONS[r.type]?.emoji || '•'} ${DISTRACTIONS[r.type]?.label || r.type}</span>
+      <div class="top"><span>${DISTRACTIONS[r.type]?.label || r.type}</span>
       <span>${r.n} × · ${r.pct}%</span></div>
       <div class="track"><div class="ffill" style="width:${r.pct}%"></div></div>
     </div>`).join('')}` : `<p class="empty">No distractions recorded in the last 7 days. Either you're locked in, or you haven't studied yet.</p>`;
 
   const st = Store.streak();
   $('#streak-box').innerHTML = `
-    <div class="big-streak">🔥 ${st.current} day${st.current === 1 ? '' : 's'}</div>
+    <div class="big-streak">${st.current} day${st.current === 1 ? '' : 's'}</div>
     <p class="muted">Longest run: ${st.longest} day${st.longest === 1 ? '' : 's'} ·
       ${st.studiedToday ? 'today is already counted' : 'today is not counted yet'}</p>
     ${st.comebackEarned ? `<p class="headline">🏅 Comeback badge earned — you came back after ${st.gap} days off and put in 15+ minutes.</p>` : ''}
-    ${st.comebackOffer ? `<p class="headline">Welcome back 👋 You haven't studied for ${st.gap} days.
+    ${st.comebackOffer ? `<p class="headline">Welcome back. You haven't studied for ${st.gap} days.
       Complete just 15 minutes today to earn a Comeback Badge.</p>` : ''}`;
 }
 const fp = (k, v) => `<div class="fp"><span>${k}</span><b>${v}</b></div>`;
@@ -423,12 +434,12 @@ function renderHistory() {
         <div class="acts">
           <span class="tag ${scoreCls}">${s.score}% focus</span>
           ${s.mood ? `<span class="tag">${MOODS[s.mood] || s.mood}</span>` : ''}
-          <span class="tag">🪟 ${s.tabSwitches}</span>
-          ${s.journal ? '<span class="tag good">🎙️ journal</span>' : ''}
+          <span class="tag">${s.tabSwitches} tab leaves</span>
+          ${s.journal ? '<span class="tag good">journal</span>' : ''}
         </div>
       </div>
       ${manual.length ? `<div class="row" style="gap:6px">${manual.map(d =>
-        `<span class="tag">${DISTRACTIONS[d.type]?.emoji || '•'} ${DISTRACTIONS[d.type]?.label || d.type}</span>`).join('')}</div>` : ''}
+        `<span class="tag">${DISTRACTIONS[d.type]?.label || d.type}</span>`).join('')}</div>` : ''}
       ${s.journal && s.journal.text ? `<div class="jtext">${esc(s.journal.text)}</div>` : ''}
     </div>`;
   }).join('') : `<p class="empty">No sessions yet. Finish one and its autopsy, mood and reflection land here.</p>`;
@@ -473,9 +484,9 @@ function openAutopsy(s) {
     next.innerHTML = `You're already focused. Keep the momentum?
       <button class="btn small" id="continue-15">Continue 15 more minutes</button>`;
   } else if (upcoming) {
-    next.innerHTML = `Next in your plan: <b>${upcoming.type === 'break' ? '☕ break' : '🎯 focus'} ${upcoming.min} min</b> — starts when you save.`;
+    next.innerHTML = `Next in your plan: <b>${upcoming.type === 'break' ? 'break' : 'focus'} ${upcoming.min} min</b> — starts when you save.`;
   } else {
-    next.innerHTML = `<button class="btn small" id="take-break">☕ Take a ${Store.state.settings.breakMin} minute break</button>`;
+    next.innerHTML = `<button class="btn small" id="take-break">Take a ${Store.state.settings.breakMin} minute break</button>`;
   }
   $('#autopsy').hidden = false;
 
@@ -516,7 +527,7 @@ function startRecording() {
   if (!Speech.supported) return;
   recLeft = 60;
   $('#rec-btn').classList.add('rec');
-  $('#rec-btn').textContent = '⏹ Stop';
+  $('#rec-btn').textContent = 'Stop';
   $('#rec-timer').textContent = recLeft + 's';
   recTimer = setInterval(() => {
     recLeft--;
@@ -542,7 +553,7 @@ function stopRecording(fromEnd) {
   if (recHandle && !fromEnd) { Speech.stop(); }
   recHandle = null;
   const b = $('#rec-btn');
-  if (b) { b.classList.remove('rec'); b.textContent = '🎙️ Start reflection'; }
+  if (b) { b.classList.remove('rec'); b.textContent = 'Start reflection'; }
 }
 
 /* ============================== WEATHER ============================== */
@@ -554,7 +565,7 @@ async function refreshWeather(place) {
     const w = await Weather.current(p.lat, p.lon);
     lastWeather = { ...w, place: p.name };
     document.documentElement.dataset.mode = w.mood;
-    $('#chip-weather').innerHTML = `${w.emoji} <span>${w.temp}° · ${esc(p.name)}</span>`;
+    $('#chip-weather').textContent = `${w.temp}° ${p.name}`;
     $('#chip-weather').title = `${w.label} — ${w.mood === 'night' ? 'Night Focus Mode' : w.rainy ? 'Rainy Focus Mode' : 'Focus Mode'}`;
     if (w.rainy && Ambience.playing !== 'rain') {
       banner({
@@ -568,7 +579,7 @@ async function refreshWeather(place) {
     }
   } catch (e) {
     console.warn('Weather unavailable', e);
-    $('#chip-weather').innerHTML = `🌡️ <span>Weather unavailable</span>`;
+    $('#chip-weather').textContent = 'Weather unavailable';
   }
 }
 
@@ -611,12 +622,12 @@ function checkReminders() {
       p.leadNotified = true; changed = true;
       banner({ id: 'lead' + p.id,
         text: `Your ${p.durationMin} minute session starts in ${fmtAgo(p.at - now)}. Wrap up what you're doing.` });
-      Notify.push('Study session coming up', `${p.durationMin} minutes, starting in ${fmtAgo(p.at - now)}.`);
+      Notify.push('Session coming up', `${p.durationMin} minutes, starting in ${fmtAgo(p.at - now)}.`);
     }
     if (!p.dueNotified && now >= p.at) {
       p.dueNotified = true; changed = true;
       Ambience.chime(true);
-      Notify.push('Time to study 📚', `Your ${p.durationMin} minute session is due now.`);
+      Notify.push('Time to focus', `Your ${p.durationMin} minute session is due now.`);
       banner({
         id: 'due' + p.id,
         text: `It's time — ${p.durationMin} minute session.`,
@@ -653,7 +664,7 @@ function previewPlan(total) {
   const blocks = shapeTime(total);
   const box = $('#have-plan');
   box.hidden = false;
-  box.innerHTML = blocks.map(b => `<span class="qstep">${b.type === 'break' ? '☕ Break' : '🎯 Focus'} ${b.min}m</span>`)
+  box.innerHTML = blocks.map(b => `<span class="qstep">${b.type === 'break' ? 'Break' : 'Focus'} ${b.min}m</span>`)
     .join('<span class="muted">→</span>') + `<button class="btn small primary" id="start-shaped">Start this plan</button>`;
   $('#start-shaped').onclick = () => {
     queue = blocks; queueDone = 0;
@@ -685,12 +696,11 @@ function celebrate() {
 
 function renderProgress() {
   const lv = Progress.level(Store.state.progress.xp);
-  $('#chip-level').innerHTML = `${lv.icon} <span>Lv ${lv.n}</span>`;
+  $('#chip-level').textContent = `Lv ${lv.n}`;
   $('#chip-level').title = `${lv.name} — ${lv.xp} XP`;
   $('#level-xp').textContent = lv.xp + ' XP';
   $('#level-box').innerHTML = `
     <div class="lvl-top">
-      <span class="lvl-icon">${lv.icon}</span>
       <div>
         <div class="lvl-name">Level ${lv.n} · ${esc(lv.name)}</div>
         <div class="lvl-sub">${lv.ceil ? `${lv.toNext} XP to ${esc(lv.nextName)}` : 'Top of the ladder. Nothing left to climb.'}</div>
@@ -721,7 +731,7 @@ const roomHandlers = {
     document.body.classList.add('nudged');
     setTimeout(() => document.body.classList.remove('nudged'), 1400);
     Ambience.chime(true);
-    toast(`👋 ${m.name || 'Your friend'} nudged you. Back to it.`);
+    toast(`${m.name || 'Your friend'} nudged you. Back to it.`);
   },
   onDone: m => {
     const r = Store.state.room;
@@ -802,7 +812,7 @@ function tryDuel() {
 function showDuel(r, res) {
   const side = (title, s, win) => `
     <div class="duel-side ${win ? 'win' : ''}">
-      <h3>${win ? '👑 ' : ''}${esc(title)}</h3>
+      <h3>${win ? '★ ' : ''}${esc(title)}</h3>
       <div class="big">${s.score}%</div>
       <div class="line"><span>Focused</span><b>${fmtDur(s.focusedMs)}</b></div>
       <div class="line"><span>Away</span><b>${fmtDur(s.awayMs)}</b></div>
@@ -810,7 +820,7 @@ function showDuel(r, res) {
       <div class="line"><span>Distractions</span><b>${s.distractions}</b></div>
     </div>`;
   const win = res.result === 'win', loss = res.result === 'loss';
-  $('#duel-title').textContent = win ? 'You won the duel 👑' : loss ? 'They took this one' : 'Dead level';
+  $('#duel-title').textContent = win ? 'You won the duel' : loss ? 'They took this one' : 'Dead level';
   $('#duel-body').innerHTML = `
     <p class="muted">${win ? 'You kept your eyes on the page longer than they did.'
       : loss ? `${esc(r.partnerName)} held focus better this time. Rematch?`
@@ -857,7 +867,7 @@ function renderRoomCard() {
 function renderRivals() {
   const fr = Store.friends();
   const cs = Store.coStreak();
-  $('#co-streak').textContent = cs ? `🤝 ${cs}-day co-study streak` : '';
+  $('#co-streak').textContent = cs ? `${cs}-day co-study streak` : '';
   $('#rivals').innerHTML = fr.length ? fr.map(f => `
     <div class="rival">
       <div class="who">
@@ -871,12 +881,12 @@ function renderRivals() {
   $('#duel-list').innerHTML = d.length ? d.map(x => `
     <div class="item">
       <div class="main">
-        <span class="when">${x.result === 'win' ? '👑 Beat' : x.result === 'loss' ? 'Lost to' : 'Drew with'} ${esc(x.partner)}</span>
+        <span class="when">${x.result === 'win' ? 'Beat' : x.result === 'loss' ? 'Lost to' : 'Drew with'} ${esc(x.partner)}</span>
         <span class="sub">${fmtWhen(x.at)} · you ${x.mine.score}% vs them ${x.theirs.score}%</span>
       </div>
       <div class="acts">
         <span class="tag ${x.result === 'win' ? 'good' : x.result === 'loss' ? 'bad' : ''}">${x.result}</span>
-        <span class="tag">🪟 ${x.mine.tabSwitches} v ${x.theirs.tabSwitches}</span>
+        <span class="tag">${x.mine.tabSwitches} v ${x.theirs.tabSwitches} tab leaves</span>
       </div>
     </div>`).join('') : `<p class="empty">Finished duels land here with the full head-to-head.</p>`;
 }
@@ -961,7 +971,7 @@ function roomTick() {
     r.started = true; Store.save();
     const remaining = Math.max(1, Math.round((endAt - now) / MIN));
     Ambience.chime(true);
-    Notify.push('Your study room is starting 👥', `${r.partnerName || 'Your friend'} is starting at the same moment.`);
+    Notify.push('Your room is starting', `${r.partnerName || 'Your friend'} is starting at the same moment.`);
     banner({ kind: 'info', timeout: 8000,
       text: `Room started — ${remaining} minutes alongside ${r.partnerName || 'your friend'}.` });
     startFocus(remaining, 'focus');
@@ -1021,6 +1031,41 @@ function applyResultLink(res) {
   Store.save();
   tryDuel();
   if (!r.mine) toast(`${res.name}'s result is saved. Finish your own session to settle the duel.`);
+}
+
+/* ============================== SHELL CHROME ============================== */
+function hidePreloader() {
+  const pre = $('#preloader');
+  if (!pre) return;
+  pre.classList.add('done');
+  setTimeout(() => pre.remove(), 700);
+}
+
+function openDrawer() { $('#drawer').hidden = false; $('#drawer-back').hidden = false; }
+function closeDrawer() { $('#drawer').hidden = true; $('#drawer-back').hidden = true; }
+
+function wireShell() {
+  $('#open-settings').onclick = openDrawer;
+  $('#quick-settings').onclick = openDrawer;
+  $('#close-settings').onclick = closeDrawer;
+  $('#drawer-back').onclick = closeDrawer;
+
+  $('#focus-expand').onclick = () => {
+    if (A || brk) { zenOff = !zenOff; syncZen(); }
+    else document.body.classList.toggle('focus-mode');
+  };
+
+  $('#quick-sound').onclick = () => {
+    if (Ambience.playing) Ambience.stop(); else Ambience.play(Store.state.settings.ambience);
+    paintSound();
+  };
+  $('#quick-voice').onclick = () => VoiceControl.on ? voiceOff() : voiceOn();
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (!$('#drawer').hidden) closeDrawer();
+    else if (document.body.classList.contains('focus-mode')) { zenOff = true; syncZen(); document.body.classList.remove('focus-mode'); }
+  });
 }
 
 function wireTogether() {
@@ -1120,7 +1165,7 @@ function wireTogether() {
  * Acts on an invite / result / live link in the address bar.
  *
  * This runs on load AND on hashchange: if your friend already has Study
- * Buddy open, tapping an invite link only changes the hash — the browser
+ * ally open, tapping an invite link only changes the hash — the browser
  * reuses the tab and never reloads, so a load-only handler would sit there
  * doing nothing while both of you wondered why it wasn't connecting.
  */
@@ -1176,28 +1221,28 @@ function initTogether() {
 /* ============================== HANDS-FREE ============================== */
 let lastWeather = null;
 const SAY_LIST = [
-  ['Buddy, start 45 minutes', 'begins a focus session'],
-  ['Buddy, pause / resume', 'holds the clock and picks it up again'],
-  ['Buddy, add five minutes', 'extends the session'],
-  ['Buddy, finish', 'ends the session and opens the autopsy'],
-  ['Buddy, take a five minute break', 'starts a break'],
-  ['Buddy, I got distracted by my phone', 'logs the distraction'],
-  ['Buddy, play rain / stop the music', 'controls the focus sound'],
-  ['Buddy, louder / quieter', 'nudges the volume'],
-  ['Buddy, I have 35 minutes', 'shapes the time into blocks and starts'],
-  ['Buddy, plan 40 minutes at 8pm', 'schedules a session for later'],
-  ['Buddy, how long left', 'reads out the time remaining'],
-  ['Buddy, how am I doing', 'reads out focus, tab leaves, distractions'],
-  ['Buddy, what is my streak / level', 'reads out your progress'],
-  ['Buddy, read me the quote', 'reads today’s quote aloud'],
-  ['Buddy, what is the weather', 'reads the current conditions'],
-  ['Buddy, set my goal to 90 minutes', 'changes the daily target'],
-  ['Buddy, set my city to Chennai', 'sets the weather location'],
-  ['Buddy, create a room', 'starts a co-study room and copies the link'],
-  ['Buddy, nudge', 'pokes your study partner'],
-  ['Buddy, show insights / journal / plan', 'switches view'],
-  ['Buddy, it was good', 'answers the mood question after a session'],
-  ['Buddy, stop listening', 'turns hands-free off']
+  ['Ally, start 45 minutes', 'begins a focus session'],
+  ['Ally, pause / resume', 'holds the clock and picks it up again'],
+  ['Ally, add five minutes', 'extends the session'],
+  ['Ally, finish', 'ends the session and opens the autopsy'],
+  ['Ally, take a five minute break', 'starts a break'],
+  ['Ally, I got distracted by my phone', 'logs the distraction'],
+  ['Ally, play rain / stop the music', 'controls the focus sound'],
+  ['Ally, louder / quieter', 'nudges the volume'],
+  ['Ally, I have 35 minutes', 'shapes the time into blocks and starts'],
+  ['Ally, plan 40 minutes at 8pm', 'schedules a session for later'],
+  ['Ally, how long left', 'reads out the time remaining'],
+  ['Ally, how am I doing', 'reads out focus, tab leaves, distractions'],
+  ['Ally, what is my streak / level', 'reads out your progress'],
+  ['Ally, read me the quote', 'reads today’s quote aloud'],
+  ['Ally, what is the weather', 'reads the current conditions'],
+  ['Ally, set my goal to 90 minutes', 'changes the daily target'],
+  ['Ally, set my city to Chennai', 'sets the weather location'],
+  ['Ally, create a room', 'starts a co-study room and copies the link'],
+  ['Ally, nudge', 'pokes your study partner'],
+  ['Ally, show insights / journal / plan', 'switches view'],
+  ['Ally, it was good', 'answers the mood question after a session'],
+  ['Ally, stop listening', 'turns hands-free off']
 ];
 
 function vbDid(msg, cls) {
@@ -1215,7 +1260,7 @@ function voiceOn() {
   }
   Store.set('handsFree', true);
   VoiceControl.start();
-  voiceSay('Hands-free is on. Say: buddy, start 25 minutes.');
+  voiceSay('Hands-free is on. Say: Ally, start 25 minutes.');
 }
 function voiceOff() {
   Store.set('handsFree', false);
@@ -1231,7 +1276,8 @@ function renderVoice(st) {
   document.body.classList.toggle('voice-on', st.on);     // keep the bar off the footer
   $('#voice-pill').textContent = !st.supported ? 'Not supported here'
     : st.dictating ? 'Recording' : st.on ? (st.listening ? 'Listening' : 'Starting…') : 'Off';
-  $('#voice-toggle').textContent = st.on ? '⏹ Turn off hands-free' : '🎙️ Turn on hands-free';
+  $('#voice-toggle').textContent = st.on ? 'Turn off hands-free' : 'Turn on hands-free';
+  $('#quick-voice-state').textContent = st.on ? 'on' : 'off';
   $('#wake-toggle').checked = st.requireWake;
   if (st.dictating) $('#vb-heard').textContent = 'Recording your reflection — say “done” when you finish.';
 }
@@ -1239,7 +1285,7 @@ function renderVoice(st) {
 /* --------------------------- the command desk --------------------------- */
 function handleIntent(p) {
   if (!p.intent) {
-    if (p.woke) voiceSay('I didn’t catch a command. Say: buddy, help.');
+    if (p.woke) voiceSay('I didn’t catch a command. Say: Ally, help.');
     return;
   }
   const SOUNDS = { rain: 'rain', waves: 'waves', ocean: 'waves', 'café': 'cafe', cafe: 'cafe',
@@ -1388,7 +1434,7 @@ function handleIntent(p) {
     case 'ask.weather':
       voiceSay(lastWeather
         ? `${lastWeather.label}, ${lastWeather.temp} degrees in ${lastWeather.place}.`
-        : 'No location set. Say: buddy, set my city to, then the name.');
+        : 'No location set. Say: Ally, set my city to, then the name.');
       break;
 
     case 'goal': {
@@ -1436,7 +1482,7 @@ function handleIntent(p) {
 function startVoiceJournal() {
   if ($('#autopsy').hidden) return;
   const btn = $('#rec-btn');
-  btn.classList.add('rec'); btn.textContent = '⏹ Stop';
+  btn.classList.add('rec'); btn.textContent = 'Stop';
   let left = 60;
   $('#rec-timer').textContent = left + 's';
   const tick = setInterval(() => { $('#rec-timer').textContent = Math.max(0, --left) + 's'; }, 1000);
@@ -1445,7 +1491,7 @@ function startVoiceJournal() {
     onText: t => { $('#journal-text').value = t; },
     onDone: t => {
       clearInterval(tick);
-      btn.classList.remove('rec'); btn.textContent = '🎙️ Start reflection';
+      btn.classList.remove('rec'); btn.textContent = 'Start reflection';
       $('#journal-text').value = t;
       renderVoice(VoiceControl.state());
       VoiceControl.say(t ? 'Got that. How did it feel — great, good, okay, rough or bad?'
@@ -1508,7 +1554,8 @@ function paintSound() {
   const cur = Ambience.playing;
   $$('#sounds .schip').forEach(b => b.classList.toggle('is-on', b.dataset.s === (cur || Store.state.settings.ambience)));
   $('#sound-state').textContent = cur ? 'Playing' : 'Off';
-  $('#sound-toggle').textContent = cur ? '⏹ Stop' : '▶ Play';
+  $('#sound-toggle').textContent = cur ? 'Stop' : 'Play';
+  $('#quick-sound-name').textContent = cur ? cur : 'off';
 }
 
 /* ================================= WIRING ================================= */
@@ -1621,13 +1668,13 @@ function wire() {
       heard.textContent = 'Speech recognition isn’t supported in this browser. Chrome or Edge will do it; meanwhile use the fields above.';
       return;
     }
-    btn.classList.add('rec'); btn.textContent = '🎙️ Listening…';
+    btn.classList.add('rec'); btn.textContent = 'Listening…';
     heard.hidden = false; heard.textContent = 'Listening…';
     VoiceControl.suspend();
     Speech.listen({
       onPartial: t => { heard.textContent = '“' + t + '”'; },
       onFinal: t => {
-        btn.classList.remove('rec'); btn.textContent = '🎙️ Plan by voice';
+        btn.classList.remove('rec'); btn.textContent = 'Plan by voice';
         VoiceControl.resume();
         if (!t) { heard.textContent = 'Didn’t catch that. Try “study for 40 minutes at 8 PM”.'; return; }
         const parsed = Parser.parse(t);
@@ -1637,7 +1684,7 @@ function wire() {
         if (Notify.supported && Notify.state() === 'default') Notify.ask().then(updateNotifState);
       },
       onError: e => {
-        btn.classList.remove('rec'); btn.textContent = '🎙️ Plan by voice';
+        btn.classList.remove('rec'); btn.textContent = 'Plan by voice';
         VoiceControl.resume();
         heard.textContent = e === 'not-allowed'
           ? 'Microphone permission was blocked. Use the fields above instead.'
@@ -1663,6 +1710,7 @@ function wire() {
 
   wireTogether();
   wireVoice();
+  wireShell();
 
   /* wipe */
   $('#wipe').onclick = () => {
@@ -1737,12 +1785,14 @@ function init() {
   const streak = Store.streak();
   if (streak.comebackOffer) {
     banner({ kind: 'info',
-      text: `Welcome back 👋 You haven't studied for ${streak.gap} days. Complete just 15 minutes today to earn a Comeback Badge.`,
+      text: `Welcome back. You haven't studied for ${streak.gap} days. Complete just 15 minutes today to earn a Comeback Badge.`,
       actions: [{ label: 'Start 15 min', fn: () => startFocus(15, 'focus') }] });
   } else if (streak.current >= 2 && !streak.studiedToday) {
     banner({ kind: 'info', timeout: 12000,
-      text: `🔥 ${streak.current}-day streak on the line. A session today keeps it alive.` });
+      text: `${streak.current}-day streak on the line. A session today keeps it alive.` });
   }
+
+  setTimeout(hidePreloader, 2100);   // long enough to actually read the tagline
 
   setInterval(tick, 250);
   setInterval(checkReminders, 10000);

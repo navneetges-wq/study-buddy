@@ -1,10 +1,10 @@
-# Study Buddy
+# ally
 
-**Plan less. Focus better. Understand how you study.**
+**Your partner in deep work.**
 
 **Live app: https://navneetges-wq.github.io/study-buddy/**
 
-You don't tell Study Buddy *what* you're studying. It learns *how* you study — when you're
+You don't tell ally *what* you're working on. It learns *how* you work — when you're
 sharpest, how long you last before you drift, what pulls you away, and how often you come back.
 
 Plain HTML, CSS and JavaScript. No frameworks, no build step, no backend.
@@ -62,25 +62,39 @@ Routing uses Google's public STUN server. On a symmetric NAT (some mobile networ
 connection can fail; the synced timer and the end-of-session result links keep working
 regardless, so the duel still settles.
 
+## Design
+
+Minimalist on purpose. One accent colour, flat surfaces, hairline borders, a single centred
+column so nothing can fall out of alignment, and no decorative icons competing with the timer.
+
+A preloader states the name and the promise — *ally · Your partner in deep work.* — then gets
+out of the way after two seconds.
+
+The moment a session starts, the app enters **full-screen focus**: the header, tabs, quote and
+every other card disappear, leaving only the countdown, your live numbers and the distraction
+log. Press Escape or the ⤢ button to bring the rest back without stopping the clock. Everything
+secondary — daily goal, focus sounds, hands-free, notifications, your data — lives in a settings
+drawer instead of cluttering the screen you stare at while working.
+
 ## Hands-free
 
 Turn on hands-free and the whole app answers to your voice. One click to allow the
 microphone — no browser lets a page open the mic without it — and after that nothing needs
 touching. The permission is remembered per origin, so on your next visit it arms itself.
 
-    "Buddy, start 45 minutes"        "Buddy, how long left"
-    "Buddy, pause"                   "Buddy, how am I doing"
-    "Buddy, add five minutes"        "Buddy, what is my streak"
-    "Buddy, I got distracted by my phone"
-    "Buddy, play rain"               "Buddy, create a room"
-    "Buddy, I have 35 minutes"       "Buddy, show insights"
+    "Ally, start 45 minutes"        "Ally, how long left"
+    "Ally, pause"                   "Ally, how am I doing"
+    "Ally, add five minutes"        "Ally, what is my streak"
+    "Ally, I got distracted by my phone"
+    "Ally, play rain"               "Ally, create a room"
+    "Ally, I have 35 minutes"       "Ally, show insights"
 
 22 commands in all, listed inside the app under *What can I say?*. Questions are answered out
 loud, so you can keep your eyes on the book.
 
 When a session ends, hands-free reads the autopsy back to you, starts the 60-second reflection
 by itself, and waits for your mood — *"it was good"* — then files the whole thing. From
-"Buddy, start 45 minutes" to a saved session with a spoken journal, nothing is clicked.
+"Ally, start 45 minutes" to a saved session with a spoken journal, nothing is clicked.
 
 A wake word is required by default so that reading aloud, a lecture in the background or a
 conversation can't fire commands by accident. You can switch it off for bare commands.
@@ -91,7 +105,7 @@ conversation can't fire commands by accident. You can switch it off for bare com
   unreliable for continuous listening. The app detects this and says so.
 - **Chrome sends the audio to Google's servers** to transcribe it. That is how the browser API
   works, not a choice this app makes — but if you're studying somewhere sensitive, it's worth
-  knowing. Everything else in Study Buddy stays on your machine.
+  knowing. Everything else in ally stays on your machine.
 - **Recognition stops while the tab is in the background.** Browsers suspend the mic there,
   which matters in this app specifically, since leaving the tab is the thing it measures. You
   can't say "resume" from another tab.

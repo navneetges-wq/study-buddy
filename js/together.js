@@ -154,7 +154,7 @@ const Together = (function () {
     room = r; me = (name || 'You').slice(0, 24); handlers = hs || {};
     peer = null; mode = 'solo'; lastRx = 0; bcLive = false;
     if (supported.bc) {
-      bc = new BroadcastChannel('studybuddy-room-' + room.id);
+      bc = new BroadcastChannel('ally-room-' + room.id);
       bc.onmessage = e => { bcLive = true; if (mode === 'solo') mode = 'linked'; receive(e.data); };
     }
     setTimeout(hello, 60);          // announce ourselves to anyone already here

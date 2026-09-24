@@ -1,10 +1,12 @@
 /* ------------------------------------------------------------------
-   store.js — everything Study Buddy remembers, plus the maths it does
+   store.js — everything ally remembers, plus the maths it does
    with those memories. All persistence is localStorage.
 -------------------------------------------------------------------*/
 const Store = (function () {
-  const KEY = 'studybuddy.v1';
-  const ACTIVE_KEY = 'studybuddy.active';
+  const KEY = 'ally.v1';
+  const ACTIVE_KEY = 'ally.active';
+  const OLD_KEY = 'studybuddy.v1';          // the app used to be called Study Buddy
+  const OLD_ACTIVE = 'studybuddy.active';
 
   const defaults = () => ({
     version: 1,
@@ -34,6 +36,13 @@ const Store = (function () {
   function read() {
     const base = defaults();
     try {
+      /* One-time migration so nobody loses their history to a rename. */
+      if (!localStorage.getItem(KEY) && localStorage.getItem(OLD_KEY)) {
+        localStorage.setItem(KEY, localStorage.getItem(OLD_KEY));
+        const a = localStorage.getItem(OLD_ACTIVE);
+        if (a) localStorage.setItem(ACTIVE_KEY, a);
+        localStorage.removeItem(OLD_KEY); localStorage.removeItem(OLD_ACTIVE);
+      }
       const raw = localStorage.getItem(KEY);
       if (!raw) return base;
       const saved = JSON.parse(raw);
