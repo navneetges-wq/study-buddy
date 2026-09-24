@@ -716,7 +716,7 @@ const roomHandlers = {
     renderPartner();
   },
   onStatus: () => { renderPartner(); renderRoomCard(); },
-  onLive: () => toast('Live channel open — you can see each other now.'),
+  onLive: () => { pendingReply = null; renderRoomCard(); toast('Live channel open — you can see each other now.'); },
   onNudge: m => {
     document.body.classList.add('nudged');
     setTimeout(() => document.body.classList.remove('nudged'), 1400);
@@ -734,7 +734,9 @@ const roomHandlers = {
   }
 };
 
-function enterRoom(room, myName) {
+let pendingReply = null;      // the guest's answer link, waiting to be sent back
+
+function enterRoom(room, myName, offer) {
   Store.set('myName', myName);
   Store.setRoom({
     id: room.id, host: room.host, role: room.role,
@@ -746,9 +748,26 @@ function enterRoom(room, myName) {
   Together.join(Store.state.room, myName, roomHandlers);
   $('#join-card').hidden = true;
   renderAll();
+
+  /* The invite carried the host's live-sync offer, so answer it right away
+     and hand the guest a single link to send back. */
+  if (offer) {
+    Together.answerLiveInvite({ d: offer })
+      .then(reply => {
+        pendingReply = reply;
+        $('#reply-to').textContent = room.host || 'your friend';
+        $('#reply-link').textContent = reply;
+        renderRoomCard();
+        copyText(reply, 'Reply link');
+        banner({ kind: 'info', timeout: 15000,
+          text: `Joined. Send the reply link back to ${room.host} so you can see each other's stats — it's on your clipboard.` });
+      })
+      .catch(e => toast('Could not set up live stats: ' + e.message));
+  }
 }
 
 function leaveRoom(quiet) {
+  pendingReply = null;
   Together.leave();
   Store.setRoom(null);
   if (!quiet) toast('Left the room. Your session history keeps everything you already did.');
@@ -828,6 +847,11 @@ function renderRoomCard() {
   ].map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('');
   $('#room-result-copy').hidden = !r.mine;
   $('#room-rematch').hidden = !(r.done || (now > endAt && r.mine));
+
+  $('#live-pill').textContent = st.live ? 'connected' : st.linked ? 'same browser' : 'not connected';
+  $('#live-pill').className = 'pill ' + (st.live ? 'live' : '');
+  $('#live-reply').hidden = !pendingReply || st.live;
+  $('#live-host').hidden = !!pendingReply || st.live;
 }
 
 function renderRivals() {
@@ -867,15 +891,35 @@ function renderPartner() {
   $('#partner-name').textContent = r.partnerName || (p && p.name) || 'Your friend';
   const dot = $('#partner-dot');
   const state = $('#partner-state');
+
+  if (p && !st.stale && p.waiting) {                 // joined, not studying yet
+    dot.className = 'pdot on';
+    state.textContent = p.done ? 'finished' : 'here, waiting';
+    state.className = 'pill live';
+    $('#nudge-btn').hidden = false;
+    $('#partner-stats').innerHTML = p.done
+      ? `<div><span class="k">Their session</span><b>done</b></div>`
+      : `<div><span class="k">Status</span><b>Ready</b></div>`;
+    $('#partner-lead').className = 'lead';
+    $('#partner-lead').innerHTML = p.done
+      ? `They have finished. Your result settles the duel.`
+      : `<b>${esc(r.partnerName || p.name || 'Your friend')}</b> is in the room. Both timers start at
+         ${new Date(r.startAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.`;
+    return;
+  }
+
   if (!p || st.stale) {
     dot.className = 'pdot';
     state.textContent = st.linked ? 'no signal' : 'not connected';
     state.className = 'pill';
     $('#partner-stats').innerHTML =
       `<div><span class="k">Live stats</span><b>—</b></div>`;
-    $('#partner-lead').textContent = st.linked
-      ? 'Waiting for their first update.'
-      : 'Their timer is running off the same clock as yours. Connect live below to see their numbers.';
+    $('#partner-lead').textContent = st.stale
+      ? 'Their page went quiet — they may have closed the tab.'
+      : st.linked
+        ? 'Connected. Waiting for their first update.'
+        : 'Their timer runs off the same clock as yours, so you still start and finish together. ' +
+          'To see their live numbers, swap live-sync links on the Together tab.';
     $('#nudge-btn').hidden = !st.linked;
     return;
   }
@@ -897,11 +941,17 @@ function renderPartner() {
     else if (diff > 0) { lead.className = 'lead ahead'; lead.innerHTML = `You're <b>${fmtDur(diff)}</b> ahead.`; }
     else { lead.className = 'lead behind'; lead.innerHTML = `You're <b>${fmtDur(-diff)}</b> behind. ${p.hidden ? 'They just left the tab though.' : ''}`; }
   } else {
-    $('#partner-lead').textContent = '';
+    /* They are working and you are not. This is the whole point of the feature. */
+    const lead = $('#partner-lead');
+    lead.className = 'lead behind';
+    lead.innerHTML = p.hidden
+      ? `<b>${esc(r.partnerName || p.name || 'They')}</b> stepped away — you haven't started at all.`
+      : `<b>${esc(r.partnerName || p.name || 'They')}</b> is ${fmtDur(p.focusedMs || 0)} in. You haven't started.`;
   }
 }
 
 /* ---------------------------- room heartbeat ---------------------------- */
+let roomBeat = 0;
 function roomTick() {
   const r = Store.state.room;
   if (!r) return;
@@ -917,12 +967,19 @@ function roomTick() {
     startFocus(remaining, 'focus');
   }
 
-  if (A && A.roomId === r.id) {
-    Together.publish({
-      focusedMs: Math.round(A.focusedMs), awayMs: Math.round(A.awayMs),
-      tabSwitches: A.tabSwitches, distractions: A.distractions.filter(d => d.type !== 'tab').length,
-      paused: A.paused, hidden: document.hidden
-    });
+  /* Presence is not the same thing as a running session: a friend who has
+     joined but is waiting for the start time must still show up. */
+  if (++roomBeat % 2 === 0) {
+    if (A && A.roomId === r.id) {
+      Together.publish({
+        waiting: false,
+        focusedMs: Math.round(A.focusedMs), awayMs: Math.round(A.awayMs),
+        tabSwitches: A.tabSwitches, distractions: A.distractions.filter(d => d.type !== 'tab').length,
+        paused: A.paused, hidden: document.hidden
+      });
+    } else {
+      Together.publish({ waiting: true, startAt: r.startAt, done: !!r.mine });
+    }
   }
 
   if (now > endAt + 86400000) leaveRoom(true);   // a day later nobody is coming back; drop it
@@ -935,7 +992,7 @@ async function copyText(text, what) {
   catch (e) { prompt('Copy this link:', text); }
 }
 
-function showJoinCard(room) {
+function showJoinCard(room, offer) {
   const now = Date.now(), endAt = room.startAt + room.durationMin * MIN;
   if (now > endAt) {
     banner({ text: `${room.host}'s session has already finished. Start a fresh room and send them a link back.` });
@@ -948,7 +1005,7 @@ function showJoinCard(room) {
   $('#join-text').innerHTML = late
     ? `<b>${esc(room.host)}</b> is already studying — ${fmtClock(endAt - now)} left of a ${room.durationMin} minute session. Join and your timer picks up the remainder.`
     : `<b>${esc(room.host)}</b> invited you to a <b>${room.durationMin} minute</b> session starting in <b>${fmtClock(room.startAt - now)}</b>. Both timers begin on their own.`;
-  $('#join-accept').onclick = () => enterRoom(room, ($('#join-name').value || 'Guest').trim().slice(0, 24));
+  $('#join-accept').onclick = () => enterRoom(room, ($('#join-name').value || 'Guest').trim().slice(0, 24), offer);
   $('#join-decline').onclick = () => { $('#join-card').hidden = true; };
   switchView('together');
 }
@@ -967,7 +1024,7 @@ function applyResultLink(res) {
 }
 
 function wireTogether() {
-  $('#room-create').onclick = () => {
+  const makeRoom = async withLive => {
     const name = ($('#room-name').value || Store.state.settings.myName || 'Me').trim().slice(0, 24);
     const room = Together.makeRoom({
       name,
@@ -975,11 +1032,30 @@ function wireTogether() {
       startInMin: parseInt($('#room-lead').value, 10) || 5
     });
     enterRoom(room, name);
-    const link = Store.state.room.invite;
+
+    let link = Store.state.room.invite;
+    if (withLive) {
+      try {
+        $('#invite-hint').hidden = false;
+        $('#invite-hint').textContent = 'Building your live link…';
+        const offer = await Together.createOffer();
+        link = Together.inviteLink(room, offer);
+        Store.state.room.invite = link; Store.save();
+        $('#live-warn').hidden = false;
+      } catch (e) {
+        toast('Live stats are unavailable in this browser — the synced timer still works.');
+      }
+    }
     $('#invite-box').hidden = false; $('#invite-hint').hidden = false;
     $('#invite-link').textContent = link;
+    $('#invite-hint').textContent = withLive
+      ? 'Send that one link. They join, and their browser sends you a reply link to paste below. Keep this tab open.'
+      : 'Send that to your friend. When the clock hits the start time, both sides begin automatically.';
     copyText(link, 'Invite link');
+    renderRoomCard();
   };
+  $('#room-create').onclick = () => makeRoom(false);
+  $('#room-create-live').onclick = () => makeRoom(true);
   $('#invite-copy').onclick = () => copyText($('#invite-link').textContent, 'Invite link');
   $('#room-invite-copy').onclick = () => Store.state.room && copyText(Store.state.room.invite, 'Invite link');
   $('#room-leave').onclick = () => { if (confirm('Leave this room?')) leaveRoom(); };
@@ -1008,26 +1084,30 @@ function wireTogether() {
       const link = await Together.createLiveInvite();
       $('#live-box').hidden = false; $('#live-warn').hidden = false;
       $('#live-link').textContent = link;
-      $('#live-state').textContent = 'Send this, then paste their reply with “Paste their link”. Keep this tab open.';
+      $('#live-state').textContent = 'Send this, then paste their reply below. Keep this tab open.';
       copyText(link, 'Live link');
     } catch (e) { $('#live-state').textContent = e.message; }
   };
   $('#live-copy').onclick = () => copyText($('#live-link').textContent, 'Live link');
-  $('#live-paste').onclick = async () => {
-    const text = prompt('Paste the live-sync link your friend sent you:');
-    if (!text) return;
+  $('#reply-copy').onclick = () => copyText($('#reply-link').textContent, 'Reply link');
+
+  $('#live-connect').onclick = async () => {
+    const text = $('#live-paste-input').value.trim();
+    if (!text) { $('#live-state').textContent = 'Paste the link they sent you first.'; return; }
     try {
       const payload = Together.readLiveLink(text);
-      if (payload.k === 'o') {
+      if (payload.k === 'o') {                       // they sent an offer: answer it
         $('#live-state').textContent = 'building your reply…';
         const reply = await Together.answerLiveInvite(payload);
-        $('#live-box').hidden = false; $('#live-warn').hidden = false;
-        $('#live-link').textContent = reply;
-        $('#live-state').textContent = 'Send this reply back to them and the channel opens.';
+        pendingReply = reply;
+        $('#reply-to').textContent = payload.n || 'your friend';
+        $('#reply-link').textContent = reply;
+        renderRoomCard();
         copyText(reply, 'Reply link');
-      } else {
+      } else {                                       // they answered ours: finish the handshake
         await Together.completeLive(payload);
         $('#live-state').textContent = 'connecting…';
+        $('#live-paste-input').value = '';
       }
     } catch (e) { $('#live-state').textContent = e.message; }
   };
@@ -1036,33 +1116,60 @@ function wireTogether() {
   $('#duel-ok').onclick = () => { $('#duel-modal').hidden = true; };
 }
 
+/**
+ * Acts on an invite / result / live link in the address bar.
+ *
+ * This runs on load AND on hashchange: if your friend already has Study
+ * Buddy open, tapping an invite link only changes the hash — the browser
+ * reuses the tab and never reloads, so a load-only handler would sit there
+ * doing nothing while both of you wondered why it wasn't connecting.
+ */
+function handleHash() {
+  const hash = Together.readHash();
+  if (!hash) return;
+  Together.clearHash();
+  const r = Store.state.room;
+
+  if (hash.kind === 'join') {
+    if (r && r.id === hash.room.id) {
+      switchView('together');
+      toast("You're already in that room.");
+    } else if (r && !r.done && Date.now() < r.startAt + r.durationMin * MIN) {
+      switchView('together');
+      banner({
+        text: `${hash.room.host} invited you to another room. Leave your current one to join it?`,
+        actions: [{ label: 'Leave and join', fn: () => { leaveRoom(true); showJoinCard(hash.room, hash.offer); } }]
+      });
+    } else {
+      if (r) leaveRoom(true);
+      showJoinCard(hash.room, hash.offer);
+    }
+  } else if (hash.kind === 'result') {
+    applyResultLink(hash.result);
+    switchView('together');
+  } else if (hash.kind === 'live') {
+    switchView('together');
+    if (hash.payload.k === 'o') {
+      Together.answerLiveInvite(hash.payload).then(reply => {
+        pendingReply = reply;
+        $('#reply-to').textContent = hash.payload.n || 'your friend';
+        $('#reply-link').textContent = reply;
+        renderRoomCard();
+        copyText(reply, 'Reply link');
+      }).catch(e => toast(e.message));
+    } else {
+      Together.completeLive(hash.payload).catch(e => toast(e.message));
+    }
+  }
+}
+
 function initTogether() {
   $('#room-name').value = Store.state.settings.myName || '';
   const r = Store.state.room;
   if (r) Together.join(r, r.myName, roomHandlers);
 
-  const hash = Together.readHash();
-  if (hash) {
-    Together.clearHash();
-    if (hash.kind === 'join') {
-      if (r && r.id === hash.room.id) toast("You're already in that room.");
-      else showJoinCard(hash.room);
-    } else if (hash.kind === 'result') {
-      applyResultLink(hash.result);
-      switchView('together');
-    } else if (hash.kind === 'live') {
-      switchView('together');
-      if (hash.payload.k === 'o') {
-        Together.answerLiveInvite(hash.payload).then(reply => {
-          $('#live-box').hidden = false; $('#live-warn').hidden = false;
-          $('#live-link').textContent = reply;
-          $('#live-state').textContent = 'Send this reply link back to them.';
-        }).catch(e => toast(e.message));
-      } else {
-        Together.completeLive(hash.payload).catch(e => toast(e.message));
-      }
-    }
-  }
+  handleHash();
+  window.addEventListener('hashchange', handleHash);
   setInterval(roomTick, 1000);
 }
 

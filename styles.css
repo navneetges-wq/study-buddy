@@ -382,3 +382,5 @@ body.nudged{animation:nudge-flash .55s 2}
 .vb-did.no{color:var(--warn)}
 @media(max-width:560px){ .voicebar{bottom:10px} body{padding-bottom:96px} }
 body.voice-on{padding-bottom:110px}
+#live-paste-input{margin-top:9px;font-size:12.5px}
+.livesync .headline{margin:10px 0 4px}

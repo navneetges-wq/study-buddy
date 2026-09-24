@@ -32,7 +32,7 @@ Three layers, each useful without the ones below it:
 |---|---|---|
 | **Synced timer** | start time + duration encoded in the invite link | always, no network at all |
 | **Live partner stats** | `BroadcastChannel` | same browser, two tabs |
-| **Live partner stats** | a WebRTC data channel, peer to peer | across devices, after swapping one link each way |
+| **Live partner stats** | a WebRTC data channel, peer to peer | across devices: send one link, paste the one reply |
 | **Duel result** | a short result link you send back when you finish | always, across devices |
 
 While a room is running you see your partner's focused time, time away, tab leaves and
@@ -43,14 +43,24 @@ When both sides finish, the **Focus Duel** settles: higher focus score wins, the
 into a permanent head-to-head record (`3W 1L 0D` against each friend), and a rematch is one
 button away.
 
-### About the live link
+### Connecting across devices
 
-The plain invite link is safe to share anywhere — it holds a room id, a name, a timestamp and
-a number. The optional *live* link is different: it carries ICE candidates, which include your
-network address, so the app labels it and asks you to send it only to your study partner. It
-uses Google's public STUN server to find a route; on a symmetric NAT (some mobile networks) the
-direct connection can fail, and the app falls back to the synced timer plus result links, which
-always work.
+**Create room + live link** gives you one link to send. Your friend opens it, taps Join, and
+their browser immediately hands them a reply link. You paste that reply once and you are
+connected. Two messages, no server, and the tab that made the link must stay open until the
+reply arrives — the connection offer lives in memory and dies with a reload.
+
+**Private link (timer only)** is the alternative: a short link holding nothing but a room id, a
+name, a timestamp and a duration. You still start and finish together; you just don't see each
+other's numbers.
+
+The difference matters because a live link carries ICE candidates, which include your network
+address. That is how two browsers find each other without a server, but it means the link
+should go to your study partner and nobody else. The app labels it every time it shows one.
+
+Routing uses Google's public STUN server. On a symmetric NAT (some mobile networks) the direct
+connection can fail; the synced timer and the end-of-session result links keep working
+regardless, so the duel still settles.
 
 ## Hands-free
 

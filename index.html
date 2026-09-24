@@ -253,21 +253,38 @@
 
     <div class="livesync">
       <div class="row between">
-        <span class="k">Live stats across devices <span class="muted">(optional)</span></span>
+        <span class="k">Live stats across devices</span>
+        <span class="pill" id="live-pill">not connected</span>
       </div>
-      <p class="muted" id="live-explain">Same browser, two tabs? Stats already flow. On separate devices, swap one link
-        each way to open a direct peer-to-peer channel — nothing goes through a server.</p>
-      <div class="row">
-        <button class="btn" id="live-create">🔗 Create live link</button>
-        <button class="btn" id="live-paste">📥 Paste their link</button>
-        <span class="muted" id="live-state"></span>
+
+      <div id="live-reply" hidden>
+        <p class="headline">📨 One last step — send this back to <b id="reply-to">your friend</b>:</p>
+        <div class="linkbox">
+          <code id="reply-link"></code>
+          <button class="btn small primary" id="reply-copy">Copy</button>
+        </div>
+        <p class="muted">Until they paste it, you'll both still start and finish together — you just
+          won't see each other's numbers.</p>
       </div>
+
+      <div id="live-host" hidden>
+        <p class="muted">Your friend will send a reply link back. Paste it here and you'll see each
+          other live. <b>Keep this tab open</b> until they do.</p>
+        <textarea id="live-paste-input" rows="2" placeholder="Paste your friend's reply link here"></textarea>
+        <div class="row">
+          <button class="btn primary small" id="live-connect">Connect</button>
+          <button class="btn small" id="live-create">Make a new live link</button>
+          <span class="muted" id="live-state"></span>
+        </div>
+      </div>
+
       <div class="linkbox" id="live-box" hidden>
         <code id="live-link"></code>
         <button class="btn small" id="live-copy">Copy</button>
       </div>
-      <p class="warn-note" id="live-warn" hidden>⚠️ A live link contains your network address. Share it with your study
-        partner only — the plain invite link above never contains it.</p>
+      <p class="warn-note" id="live-warn" hidden>⚠️ A live link carries your network address so the two
+        browsers can find each other. Send it to your study partner only. The “private link” option
+        above never contains it.</p>
     </div>
 
     <div class="row">
@@ -286,7 +303,8 @@
       <label class="field"><span>Your name</span><input type="text" id="room-name" maxlength="24" placeholder="Your name"></label>
       <label class="field"><span>Length</span><input type="number" id="room-dur" min="5" max="180" value="45"></label>
       <label class="field"><span>Starts in</span><input type="number" id="room-lead" min="1" max="60" value="5"></label>
-      <button class="btn primary" id="room-create">Create the room</button>
+      <button class="btn primary" id="room-create-live">Create room + live link</button>
+      <button class="btn" id="room-create">Private link (timer only)</button>
     </div>
     <div class="linkbox" id="invite-box" hidden>
       <code id="invite-link"></code>

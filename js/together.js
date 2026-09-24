@@ -35,8 +35,9 @@ const Together = (function () {
       role: 'host'
     };
   }
-  const inviteLink = r =>
-    `${base()}#join=${enc({ r: r.id, h: r.host, s: r.startAt, d: r.durationMin })}`;
+  const inviteLink = (r, offer) =>
+    `${base()}#join=${enc({ r: r.id, h: r.host, s: r.startAt, d: r.durationMin,
+                            ...(offer ? { o: offer } : {}) })}`;
 
   const resultLink = (room, me, sum) =>
     `${base()}#result=${enc({ r: room.id, n: me, f: Math.round(sum.focusedMs), a: Math.round(sum.awayMs),
@@ -49,7 +50,8 @@ const Together = (function () {
     if (!m) return null;
     try {
       const d = dec(m[2]);
-      if (m[1] === 'join')   return { kind: 'join',   room: { id: d.r, host: d.h, startAt: d.s, durationMin: d.d, role: 'guest' } };
+      if (m[1] === 'join')   return { kind: 'join', offer: d.o || null,
+                                       room: { id: d.r, host: d.h, startAt: d.s, durationMin: d.d, role: 'guest' } };
       if (m[1] === 'result') return { kind: 'result', result: { room: d.r, name: d.n, focusedMs: d.f, awayMs: d.a,
                                                                 tabSwitches: d.t, distractions: d.x, score: d.s } };
       return { kind: 'live', payload: d };
@@ -106,7 +108,7 @@ const Together = (function () {
 
   /* ------------------------------ transport ------------------------------ */
   let room = null, me = '', bc = null, pc = null, dc = null;
-  let handlers = {}, peer = null, mode = 'solo', lastRx = 0;
+  let handlers = {}, peer = null, mode = 'solo', lastRx = 0, lastState = null;
   /* Identity is per tab, not per name: two people can pick the same name,
      and one person can have the app open twice. */
   const selfId = Math.random().toString(36).slice(2, 10);
@@ -124,6 +126,16 @@ const Together = (function () {
   function receive(msg) {
     if (!msg || msg.from === selfId) return;          // our own echo
     lastRx = Date.now();
+    if (msg.t === 'hello') {
+      /* Someone just walked in. Show them immediately, and answer with
+         where we are, so neither side sits on "not connected". */
+      if (!peer || peer.waiting) peer = { ...msg, waiting: true };
+      if (mode === 'solo' && bcLive) mode = 'linked';
+      handlers.onPeer && handlers.onPeer(peer);
+      send({ t: 'state', ...(lastState || { waiting: true }) });
+      emitStatus();
+      return;
+    }
     if (msg.t === 'state') {
       peer = msg;
       if (mode === 'solo') { mode = bcLive ? 'linked' : mode; }
@@ -145,6 +157,7 @@ const Together = (function () {
       bc = new BroadcastChannel('studybuddy-room-' + room.id);
       bc.onmessage = e => { bcLive = true; if (mode === 'solo') mode = 'linked'; receive(e.data); };
     }
+    setTimeout(hello, 60);          // announce ourselves to anyone already here
     emitStatus();
     return room;
   }
@@ -154,7 +167,8 @@ const Together = (function () {
     try { bc && bc.postMessage(msg); } catch (e) {}
     try { if (dc && dc.readyState === 'open') dc.send(JSON.stringify(msg)); } catch (e) {}
   }
-  const publish = s => send({ t: 'state', ...s });
+  const publish = s => { lastState = s; send({ t: 'state', ...s }); };
+  const hello = () => send({ t: 'hello' });
   const nudge = () => send({ t: 'nudge' });
   const finish = sum => send({ t: 'done', summary: sum });
 
@@ -162,21 +176,24 @@ const Together = (function () {
     try { bc && bc.close(); } catch (e) {}
     try { dc && dc.close(); } catch (e) {}
     try { pc && pc.close(); } catch (e) {}
-    bc = dc = pc = null; room = null; peer = null; mode = 'solo'; bcLive = false;
+    bc = dc = pc = null; room = null; peer = null; mode = 'solo'; bcLive = false; lastState = null;
   }
 
   /* --------------------- WebRTC handshake (two links) --------------------- */
   function wireChannel(channel) {
     dc = channel;
-    dc.onopen = () => { mode = 'live'; lastRx = Date.now(); emitStatus(); handlers.onLive && handlers.onLive(); };
+    dc.onopen = () => {
+      mode = 'live'; lastRx = Date.now();
+      hello();                                      // same handshake over the new pipe
+      emitStatus(); handlers.onLive && handlers.onLive();
+    };
     dc.onclose = () => { mode = bcLive ? 'linked' : 'solo'; emitStatus(); };
     dc.onmessage = e => { try { receive(JSON.parse(e.data)); } catch (err) {} };
   }
 
-  /** Host side: make the link that lets a friend see your stats live. */
-  async function createLiveInvite() {
+  /** Host side: build an offer and keep the connection open, waiting for a reply. */
+  async function createOffer() {
     if (!supported.rtc) throw new Error('This browser has no WebRTC.');
-    if (!room) throw new Error('Start or join a room first.');
     try { pc && pc.close(); } catch (e) {}
     pc = new RTCPeerConnection(ICE);
     wireChannel(pc.createDataChannel('sb', { ordered: true }));
@@ -187,8 +204,18 @@ const Together = (function () {
     };
     await pc.setLocalDescription(await pc.createOffer());
     await gathered(pc);
-    return `${base()}#live=${enc({ r: room.id, k: 'o', n: me, d: squeeze(pc.localDescription.sdp) })}`;
+    return squeeze(pc.localDescription.sdp);
   }
+
+  /** The same offer, wrapped as a standalone link for the manual route. */
+  async function createLiveInvite() {
+    if (!room) throw new Error('Start or join a room first.');
+    const d = await createOffer();
+    return `${base()}#live=${enc({ r: room.id, k: 'o', n: me, d })}`;
+  }
+
+  const hasPendingOffer = () => !!pc && !!pc.localDescription && pc.localDescription.type === 'offer'
+                                && (!dc || dc.readyState !== 'open');
 
   /** Guest side: swallow their live link, hand back your reply link. */
   async function answerLiveInvite(payload) {
@@ -204,7 +231,8 @@ const Together = (function () {
 
   /** Host side again: take their reply link and the channel opens. */
   async function completeLive(payload) {
-    if (!pc) throw new Error('Make a live link first — and keep this tab open.');
+    if (!pc) throw new Error('This tab was reloaded since you made the invite, so that link is dead. ' +
+                             'Make a new live link, send it again, and keep this tab open.');
     await pc.setRemoteDescription({ type: 'answer', sdp: unsqueeze(payload.d) });
   }
 
@@ -217,8 +245,8 @@ const Together = (function () {
 
   return {
     supported, makeRoom, inviteLink, resultLink, readHash, clearHash,
-    join, leave, publish, nudge, finish, status,
-    createLiveInvite, answerLiveInvite, completeLive, readLiveLink,
+    join, leave, publish, hello, nudge, finish, status,
+    createOffer, createLiveInvite, answerLiveInvite, completeLive, readLiveLink, hasPendingOffer,
     get room() { return room; }, get me() { return me; }
   };
 })();
