@@ -247,6 +247,7 @@ const Together = (function () {
     supported, makeRoom, inviteLink, resultLink, readHash, clearHash,
     join, leave, publish, hello, nudge, finish, status,
     createOffer, createLiveInvite, answerLiveInvite, completeLive, readLiveLink, hasPendingOffer,
-    get room() { return room; }, get me() { return me; }
+    get room() { return room; }, get me() { return me; },
+    get rtcState() { return pc ? pc.signalingState : 'none'; }
   };
 })();
