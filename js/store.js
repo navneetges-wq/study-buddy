@@ -22,7 +22,11 @@ const Store = (function () {
       place: null          // {name, lat, lon}
     },
     quote: null,           // {date, text, author}
-    lastOpenedDay: null
+    lastOpenedDay: null,
+    progress: { xp: 0, achievements: {} },
+    friends: {},           // name key -> head-to-head record
+    duels: [],             // finished co-study sessions
+    room: null             // the room you're currently in, so a refresh keeps you in it
   });
 
   let s = read();
@@ -36,9 +40,13 @@ const Store = (function () {
       return {
         ...base, ...saved,
         settings: { ...base.settings, ...(saved.settings || {}) },
+        progress: { ...base.progress, ...(saved.progress || {}),
+                    achievements: (saved.progress && saved.progress.achievements) || {} },
         days: saved.days || {},
         sessions: saved.sessions || [],
-        planned: saved.planned || []
+        planned: saved.planned || [],
+        friends: saved.friends || {},
+        duels: saved.duels || []
       };
     } catch (e) {
       console.warn('Could not read saved data, starting fresh.', e);
@@ -183,6 +191,43 @@ const Store = (function () {
     return { current, longest, gap, studiedToday: has(today), comebackEarned, comebackOffer };
   }
 
+  /* --------------------------- studying together --------------------------- */
+  const friendKey = n => String(n || 'friend').trim().toLowerCase().slice(0, 24) || 'friend';
+
+  /** Files a finished head-to-head and updates the running record. */
+  function recordDuel(partnerName, mine, theirs) {
+    const key = friendKey(partnerName);
+    const result = mine.score > theirs.score ? 'win' : mine.score < theirs.score ? 'loss' : 'draw';
+    const f = s.friends[key] || { name: partnerName, wins: 0, losses: 0, draws: 0, duels: 0, together: 0, days: [] };
+    f.name = partnerName || f.name;
+    f.duels++;
+    f[result === 'win' ? 'wins' : result === 'loss' ? 'losses' : 'draws']++;
+    f.together += mine.focusedMs;
+    f.lastAt = Date.now();
+    const today = dayKey();
+    if (!f.days.includes(today)) f.days.push(today);
+    f.days = f.days.slice(-90);
+    s.friends[key] = f;
+    s.duels.push({ at: Date.now(), partner: partnerName, result, mine, theirs });
+    s.duels = s.duels.slice(-60);
+    save();
+    return { result, record: f };
+  }
+
+  const friends = () => Object.values(s.friends).sort((a, b) => (b.lastAt || 0) - (a.lastAt || 0));
+
+  /** Days in a row with at least one session studied alongside someone. */
+  function coStreak() {
+    const all = new Set();
+    Object.values(s.friends).forEach(f => (f.days || []).forEach(d => all.add(d)));
+    if (!all.size) return 0;
+    let n = 0, cursor = all.has(dayKey()) ? Date.now() : Date.now() - DAY;
+    while (all.has(dayKey(cursor))) { n++; cursor -= DAY; }
+    return n;
+  }
+
+  function setRoom(r) { s.room = r; save(); }
+
   /** The Focus Fingerprint: what your sessions say about how you study. */
   function fingerprint() {
     const all = s.sessions.filter(x => x.kind !== 'break');
@@ -235,6 +280,7 @@ const Store = (function () {
     save, set, dayKey, dayStart, DAY,
     addSession, updateSession, addPlanned, setPlanned, removePlanned,
     saveActive, readActive, wipe,
-    scoreOf, totals, last7, distractionSplit, streak, fingerprint, todayMs
+    scoreOf, totals, last7, distractionSplit, streak, fingerprint, todayMs,
+    recordDuel, friends, coStreak, setRoom, friendKey
   };
 })();

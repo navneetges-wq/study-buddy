@@ -109,6 +109,8 @@ function startFocus(minutes, kind, planId) {
   if (brk) endBreak(true);
   const ms = Math.max(1, Math.round(minutes)) * MIN;
   A = newSession(ms, kind, planId);
+  const r = Store.state.room;                     // a session started inside the room window is a co-session
+  if (r && Date.now() >= r.startAt - 90000 && Date.now() < r.startAt + r.durationMin * MIN) A.roomId = r.id;
   Store.saveActive(A);
   Store.set('lastDurationMin', Math.round(minutes));
   if (Store.state.settings.autoAmbience && !Ambience.playing) {
@@ -160,11 +162,16 @@ function finish(auto) {
     tabSwitches: s.tabSwitches, distractions: s.distractions,
     firstDistractionAt: s.firstDistractionAt,
     completed: s.focusedMs >= s.plannedMs * 0.95,
+    roomId: s.roomId || null,
     mood: null, journal: null
   };
   record.score = Store.scoreOf(record);
   Store.addSession(record);
   if (s.planId) Store.setPlanned(s.planId, { status: 'done' });
+
+  const gained = Progress.award(record, { coStudy: !!record.roomId, streak: Store.streak().current });
+  lastGain = gained;
+  if (record.roomId) reportToRoom(record);
   Ambience.chime(true);
   if (auto) Notify.push('Session complete 🎉', `${fmtDur(record.focusedMs)} of focus. Time for your reflection.`);
   openAutopsy(record);
@@ -427,7 +434,10 @@ function renderHistory() {
   }).join('') : `<p class="empty">No sessions yet. Finish one and its autopsy, mood and reflection land here.</p>`;
 }
 
-function renderAll() { renderChips(); renderPlanLists(); renderInsights(); renderHistory(); renderTimer(); }
+function renderAll() {
+  renderChips(); renderPlanLists(); renderInsights(); renderHistory();
+  renderProgress(); renderTogether(); renderPartner(); renderTimer();
+}
 
 /* ============================ AUTOPSY MODAL ============================ */
 let recHandle = null, recTimer = null, recLeft = 60;
@@ -452,6 +462,11 @@ function openAutopsy(s) {
     : 'Speech recognition isn’t available in this browser — type your reflection instead.';
   $('#rec-btn').hidden = !Speech.supported;
 
+  if (lastGain) {
+    $('#autopsy-grid').insertAdjacentHTML('beforeend',
+      `<div class="ap score"><span>XP earned</span><b>+${lastGain.xp}</b></div>`);
+  }
+
   const next = $('#autopsy-next');
   const upcoming = queueDone < queue.length ? queue[queueDone] : null;
   if (s.kind === 'micro') {
@@ -469,6 +484,7 @@ function closeAutopsy(startNext) {
   stopRecording();
   $('#autopsy').hidden = true;
   pendingSession = null;
+  celebrate();
   if (startNext !== false) {
     const nxt = nextQueueBlock();
     if (nxt) nxt.type === 'break' ? startBreak(nxt.min) : startFocus(nxt.min, 'focus');
@@ -636,6 +652,409 @@ function previewPlan(total) {
   };
 }
 
+/* ============================ PROGRESSION ============================ */
+let lastGain = null;
+
+function celebrate() {
+  if (lastGain) {
+    banner({ kind: 'info', timeout: 9000,
+      html: `<b>+${lastGain.xp} XP</b> — ${lastGain.lines.map(l => esc(l[0])).join(' · ')}` });
+    if (lastGain.levelUp) {
+      Ambience.chime(true);
+      banner({ kind: 'info', timeout: 14000,
+        html: `${lastGain.levelUp.icon} <b>Level ${lastGain.levelUp.n} — ${esc(lastGain.levelUp.name)}</b>` +
+              (lastGain.levelUp.ceil ? ` · ${lastGain.levelUp.toNext} XP to ${esc(lastGain.levelUp.nextName)}` : '') });
+    }
+    lastGain = null;
+  }
+  Progress.check().forEach(a => banner({ kind: 'info', timeout: 13000,
+    html: `${a.icon} <b>Achievement unlocked — ${esc(a.title)}</b> · ${esc(a.desc)}` }));
+  renderProgress();
+}
+
+function renderProgress() {
+  const lv = Progress.level(Store.state.progress.xp);
+  $('#chip-level').innerHTML = `${lv.icon} <span>Lv ${lv.n}</span>`;
+  $('#chip-level').title = `${lv.name} — ${lv.xp} XP`;
+  $('#level-xp').textContent = lv.xp + ' XP';
+  $('#level-box').innerHTML = `
+    <div class="lvl-top">
+      <span class="lvl-icon">${lv.icon}</span>
+      <div>
+        <div class="lvl-name">Level ${lv.n} · ${esc(lv.name)}</div>
+        <div class="lvl-sub">${lv.ceil ? `${lv.toNext} XP to ${esc(lv.nextName)}` : 'Top of the ladder. Nothing left to climb.'}</div>
+      </div>
+    </div>
+    <div class="xp-bar"><div class="xp-fill" style="width:${lv.pct}%"></div></div>
+    <p class="muted">XP comes from focused minutes, finishing what you planned, never leaving the tab,
+      keeping a streak alive and studying alongside someone.</p>`;
+
+  const list = Progress.all();
+  $('#ach-count').textContent = `${list.filter(a => a.at).length} / ${list.length} unlocked`;
+  $('#ach-grid').innerHTML = list.map(a => `
+    <div class="ach ${a.at ? 'got' : ''}" title="${a.at ? 'Unlocked ' + fmtWhen(a.at) : 'Locked'}">
+      <div class="ico">${a.icon}</div><b>${esc(a.title)}</b><span>${esc(a.desc)}</span>
+    </div>`).join('');
+}
+
+/* ============================== ROOMS ============================== */
+const roomHandlers = {
+  onPeer: m => {
+    const r = Store.state.room;
+    if (r && m.name && !r.partnerName) { r.partnerName = m.name; Store.save(); renderRoomCard(); }
+    renderPartner();
+  },
+  onStatus: () => { renderPartner(); renderRoomCard(); },
+  onLive: () => toast('Live channel open — you can see each other now.'),
+  onNudge: m => {
+    document.body.classList.add('nudged');
+    setTimeout(() => document.body.classList.remove('nudged'), 1400);
+    Ambience.chime(true);
+    toast(`👋 ${m.name || 'Your friend'} nudged you. Back to it.`);
+  },
+  onDone: m => {
+    const r = Store.state.room;
+    if (!r || !m.summary) return;
+    r.theirs = { ...m.summary, name: m.name || r.partnerName };
+    r.partnerName = r.partnerName || m.name;
+    Store.save();
+    toast(`${r.partnerName || 'Your friend'} finished their session.`);
+    tryDuel();
+  }
+};
+
+function enterRoom(room, myName) {
+  Store.set('myName', myName);
+  Store.setRoom({
+    id: room.id, host: room.host, role: room.role,
+    partnerName: room.role === 'guest' ? room.host : (room.partnerName || null),
+    myName, startAt: room.startAt, durationMin: room.durationMin,
+    started: false, mine: null, theirs: null, done: false,
+    invite: Together.inviteLink(room)
+  });
+  Together.join(Store.state.room, myName, roomHandlers);
+  $('#join-card').hidden = true;
+  renderAll();
+}
+
+function leaveRoom(quiet) {
+  Together.leave();
+  Store.setRoom(null);
+  if (!quiet) toast('Left the room. Your session history keeps everything you already did.');
+  renderAll();
+}
+
+function reportToRoom(record) {
+  const r = Store.state.room;
+  if (!r || record.roomId !== r.id) return;
+  r.mine = {
+    focusedMs: record.focusedMs, awayMs: record.awayMs, tabSwitches: record.tabSwitches,
+    distractions: (record.distractions || []).filter(d => d.type !== 'tab').length,
+    score: record.score
+  };
+  Store.save();
+  Together.finish(r.mine);
+  tryDuel();
+}
+
+function tryDuel() {
+  const r = Store.state.room;
+  if (!r || !r.mine || !r.theirs || r.done) return;
+  r.done = true;
+  r.partnerName = r.theirs.name || r.partnerName || 'Your friend';
+  Store.save();
+  const res = Store.recordDuel(r.partnerName, r.mine, r.theirs);
+  if (res.result === 'win') { Store.state.progress.xp += 15; Store.save(); }
+  showDuel(r, res);
+  renderAll();
+}
+
+function showDuel(r, res) {
+  const side = (title, s, win) => `
+    <div class="duel-side ${win ? 'win' : ''}">
+      <h3>${win ? '👑 ' : ''}${esc(title)}</h3>
+      <div class="big">${s.score}%</div>
+      <div class="line"><span>Focused</span><b>${fmtDur(s.focusedMs)}</b></div>
+      <div class="line"><span>Away</span><b>${fmtDur(s.awayMs)}</b></div>
+      <div class="line"><span>Tab leaves</span><b>${s.tabSwitches}</b></div>
+      <div class="line"><span>Distractions</span><b>${s.distractions}</b></div>
+    </div>`;
+  const win = res.result === 'win', loss = res.result === 'loss';
+  $('#duel-title').textContent = win ? 'You won the duel 👑' : loss ? 'They took this one' : 'Dead level';
+  $('#duel-body').innerHTML = `
+    <p class="muted">${win ? 'You kept your eyes on the page longer than they did.'
+      : loss ? `${esc(r.partnerName)} held focus better this time. Rematch?`
+      : 'Identical focus scores. Statistically suspicious.'}</p>
+    <div class="duel-row">
+      ${side(r.myName || 'You', r.mine, win)}
+      <div class="duel-vs">vs</div>
+      ${side(r.partnerName || 'Your friend', r.theirs, loss)}
+    </div>${win ? '<p class="muted">+15 XP for the win.</p>' : ''}`;
+  const rec = res.record;
+  $('#duel-record').innerHTML = `Against ${esc(rec.name)}: <b>${rec.wins}W ${rec.losses}L ${rec.draws}D</b>`;
+  $('#duel-modal').hidden = false;
+}
+
+/* --------------------------- room rendering --------------------------- */
+function renderRoomCard() {
+  const r = Store.state.room;
+  $('#room-live').hidden = !r;
+  $('#room-make').hidden = !!r;
+  if (!r) return;
+  const now = Date.now(), endAt = r.startAt + r.durationMin * MIN;
+  const phase = now < r.startAt ? 'starts in ' + fmtClock(r.startAt - now)
+              : now < endAt ? fmtClock(endAt - now) + ' left'
+              : r.mine ? 'finished' : 'window closed';
+  const st = Together.status();
+  $('#room-partner').textContent = r.partnerName || 'a friend';
+  $('#room-status').textContent = st.live ? 'live' : st.linked ? 'linked' : 'solo';
+  $('#room-status').className = 'pill ' + (st.live || st.linked ? 'live' : '');
+  $('#room-grid').innerHTML = [
+    ['Session', phase],
+    ['Length', r.durationMin + ' min'],
+    ['You', esc(r.myName || 'You')],
+    ['Partner', esc(r.partnerName || 'unnamed so far')]
+  ].map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('');
+  $('#room-result-copy').hidden = !r.mine;
+  $('#room-rematch').hidden = !(r.done || (now > endAt && r.mine));
+}
+
+function renderRivals() {
+  const fr = Store.friends();
+  const cs = Store.coStreak();
+  $('#co-streak').textContent = cs ? `🤝 ${cs}-day co-study streak` : '';
+  $('#rivals').innerHTML = fr.length ? fr.map(f => `
+    <div class="rival">
+      <div class="who">
+        <b>${esc(f.name)}</b>
+        <span class="sub">${f.duels} duel${f.duels === 1 ? '' : 's'} · ${fmtShort(f.together)} studied side by side</span>
+      </div>
+      <div class="wl"><span class="w">${f.wins}</span><i>W</i> <span class="l">${f.losses}</span><i>L</i> ${f.draws}<i>D</i></div>
+    </div>`).join('') : `<p class="empty">No rivals yet. Create a room, send the link, and the first duel writes itself here.</p>`;
+
+  const d = Store.state.duels.slice().reverse().slice(0, 10);
+  $('#duel-list').innerHTML = d.length ? d.map(x => `
+    <div class="item">
+      <div class="main">
+        <span class="when">${x.result === 'win' ? '👑 Beat' : x.result === 'loss' ? 'Lost to' : 'Drew with'} ${esc(x.partner)}</span>
+        <span class="sub">${fmtWhen(x.at)} · you ${x.mine.score}% vs them ${x.theirs.score}%</span>
+      </div>
+      <div class="acts">
+        <span class="tag ${x.result === 'win' ? 'good' : x.result === 'loss' ? 'bad' : ''}">${x.result}</span>
+        <span class="tag">🪟 ${x.mine.tabSwitches} v ${x.theirs.tabSwitches}</span>
+      </div>
+    </div>`).join('') : `<p class="empty">Finished duels land here with the full head-to-head.</p>`;
+}
+
+const renderTogether = () => { renderRoomCard(); renderRivals(); };
+
+function renderPartner() {
+  const r = Store.state.room, panel = $('#partner-panel');
+  if (!r) { panel.hidden = true; return; }
+  panel.hidden = false;
+  const st = Together.status(), p = st.peer;
+  $('#partner-name').textContent = r.partnerName || (p && p.name) || 'Your friend';
+  const dot = $('#partner-dot');
+  const state = $('#partner-state');
+  if (!p || st.stale) {
+    dot.className = 'pdot';
+    state.textContent = st.linked ? 'no signal' : 'not connected';
+    state.className = 'pill';
+    $('#partner-stats').innerHTML =
+      `<div><span class="k">Live stats</span><b>—</b></div>`;
+    $('#partner-lead').textContent = st.linked
+      ? 'Waiting for their first update.'
+      : 'Their timer is running off the same clock as yours. Connect live below to see their numbers.';
+    $('#nudge-btn').hidden = !st.linked;
+    return;
+  }
+  dot.className = 'pdot ' + (p.hidden ? 'away' : 'on');
+  state.textContent = p.paused ? 'paused' : p.hidden ? 'left the tab' : 'focusing';
+  state.className = 'pill ' + (p.paused ? 'paused' : p.hidden ? 'away' : 'live');
+  $('#nudge-btn').hidden = false;
+  $('#partner-stats').innerHTML = [
+    ['Focused', fmtDur(p.focusedMs || 0)],
+    ['Away', fmtDur(p.awayMs || 0)],
+    ['Tab leaves', p.tabSwitches || 0],
+    ['Distractions', p.distractions || 0]
+  ].map(([k, v]) => `<div><span class="k">${k}</span><b>${v}</b></div>`).join('');
+
+  if (A) {
+    const diff = A.focusedMs - (p.focusedMs || 0);
+    const lead = $('#partner-lead');
+    if (Math.abs(diff) < 20000) { lead.className = 'lead'; lead.innerHTML = `Neck and neck. <b>${fmtDur(Math.abs(diff))}</b> between you.`; }
+    else if (diff > 0) { lead.className = 'lead ahead'; lead.innerHTML = `You're <b>${fmtDur(diff)}</b> ahead.`; }
+    else { lead.className = 'lead behind'; lead.innerHTML = `You're <b>${fmtDur(-diff)}</b> behind. ${p.hidden ? 'They just left the tab though.' : ''}`; }
+  } else {
+    $('#partner-lead').textContent = '';
+  }
+}
+
+/* ---------------------------- room heartbeat ---------------------------- */
+function roomTick() {
+  const r = Store.state.room;
+  if (!r) return;
+  const now = Date.now(), endAt = r.startAt + r.durationMin * MIN;
+
+  if (!r.started && now >= r.startAt && now < endAt && !A && !brk) {
+    r.started = true; Store.save();
+    const remaining = Math.max(1, Math.round((endAt - now) / MIN));
+    Ambience.chime(true);
+    Notify.push('Your study room is starting 👥', `${r.partnerName || 'Your friend'} is starting at the same moment.`);
+    banner({ kind: 'info', timeout: 8000,
+      text: `Room started — ${remaining} minutes alongside ${r.partnerName || 'your friend'}.` });
+    startFocus(remaining, 'focus');
+  }
+
+  if (A && A.roomId === r.id) {
+    Together.publish({
+      focusedMs: Math.round(A.focusedMs), awayMs: Math.round(A.awayMs),
+      tabSwitches: A.tabSwitches, distractions: A.distractions.filter(d => d.type !== 'tab').length,
+      paused: A.paused, hidden: document.hidden
+    });
+  }
+
+  if (now > endAt + 86400000) leaveRoom(true);   // a day later nobody is coming back; drop it
+  renderRoomCard(); renderPartner();
+}
+
+/* ----------------------------- link plumbing ----------------------------- */
+async function copyText(text, what) {
+  try { await navigator.clipboard.writeText(text); toast(`${what} copied to your clipboard.`); }
+  catch (e) { prompt('Copy this link:', text); }
+}
+
+function showJoinCard(room) {
+  const now = Date.now(), endAt = room.startAt + room.durationMin * MIN;
+  if (now > endAt) {
+    banner({ text: `${room.host}'s session has already finished. Start a fresh room and send them a link back.` });
+    switchView('together');
+    return;
+  }
+  $('#join-card').hidden = false;
+  $('#join-name').value = Store.state.settings.myName || '';
+  const late = now > room.startAt;
+  $('#join-text').innerHTML = late
+    ? `<b>${esc(room.host)}</b> is already studying — ${fmtClock(endAt - now)} left of a ${room.durationMin} minute session. Join and your timer picks up the remainder.`
+    : `<b>${esc(room.host)}</b> invited you to a <b>${room.durationMin} minute</b> session starting in <b>${fmtClock(room.startAt - now)}</b>. Both timers begin on their own.`;
+  $('#join-accept').onclick = () => enterRoom(room, ($('#join-name').value || 'Guest').trim().slice(0, 24));
+  $('#join-decline').onclick = () => { $('#join-card').hidden = true; };
+  switchView('together');
+}
+
+function applyResultLink(res) {
+  const r = Store.state.room;
+  if (!r || r.id !== res.room) {
+    toast('That result belongs to a different room, so there was nothing to compare it with.');
+    return;
+  }
+  r.theirs = { ...res, name: res.name };
+  r.partnerName = res.name || r.partnerName;
+  Store.save();
+  tryDuel();
+  if (!r.mine) toast(`${res.name}'s result is saved. Finish your own session to settle the duel.`);
+}
+
+function wireTogether() {
+  $('#room-create').onclick = () => {
+    const name = ($('#room-name').value || Store.state.settings.myName || 'Me').trim().slice(0, 24);
+    const room = Together.makeRoom({
+      name,
+      durationMin: parseInt($('#room-dur').value, 10) || 45,
+      startInMin: parseInt($('#room-lead').value, 10) || 5
+    });
+    enterRoom(room, name);
+    const link = Store.state.room.invite;
+    $('#invite-box').hidden = false; $('#invite-hint').hidden = false;
+    $('#invite-link').textContent = link;
+    copyText(link, 'Invite link');
+  };
+  $('#invite-copy').onclick = () => copyText($('#invite-link').textContent, 'Invite link');
+  $('#room-invite-copy').onclick = () => Store.state.room && copyText(Store.state.room.invite, 'Invite link');
+  $('#room-leave').onclick = () => { if (confirm('Leave this room?')) leaveRoom(); };
+  $('#room-rematch').onclick = () => {
+    const old = Store.state.room;
+    if (!old) return;
+    const name = old.myName || 'Me';
+    const room = Together.makeRoom({ name, durationMin: old.durationMin, startInMin: 3 });
+    const partner = old.partnerName;
+    leaveRoom(true);
+    enterRoom(room, name);
+    Store.state.room.partnerName = partner; Store.save();
+    copyText(Store.state.room.invite, 'Rematch link');
+    toast(`Rematch set up — send the link to ${partner || 'your friend'}. Starts in 3 minutes.`);
+    renderAll();
+  };
+  $('#room-result-copy').onclick = () => {
+    const r = Store.state.room;
+    if (r && r.mine) copyText(Together.resultLink(r, r.myName || 'Your friend', r.mine), 'Result link');
+  };
+  $('#nudge-btn').onclick = () => { Together.nudge(); toast('Nudge sent.'); };
+
+  $('#live-create').onclick = async () => {
+    try {
+      $('#live-state').textContent = 'gathering network routes…';
+      const link = await Together.createLiveInvite();
+      $('#live-box').hidden = false; $('#live-warn').hidden = false;
+      $('#live-link').textContent = link;
+      $('#live-state').textContent = 'Send this, then paste their reply with “Paste their link”. Keep this tab open.';
+      copyText(link, 'Live link');
+    } catch (e) { $('#live-state').textContent = e.message; }
+  };
+  $('#live-copy').onclick = () => copyText($('#live-link').textContent, 'Live link');
+  $('#live-paste').onclick = async () => {
+    const text = prompt('Paste the live-sync link your friend sent you:');
+    if (!text) return;
+    try {
+      const payload = Together.readLiveLink(text);
+      if (payload.k === 'o') {
+        $('#live-state').textContent = 'building your reply…';
+        const reply = await Together.answerLiveInvite(payload);
+        $('#live-box').hidden = false; $('#live-warn').hidden = false;
+        $('#live-link').textContent = reply;
+        $('#live-state').textContent = 'Send this reply back to them and the channel opens.';
+        copyText(reply, 'Reply link');
+      } else {
+        await Together.completeLive(payload);
+        $('#live-state').textContent = 'connecting…';
+      }
+    } catch (e) { $('#live-state').textContent = e.message; }
+  };
+
+  $('#duel-close').onclick = () => { $('#duel-modal').hidden = true; };
+  $('#duel-ok').onclick = () => { $('#duel-modal').hidden = true; };
+}
+
+function initTogether() {
+  $('#room-name').value = Store.state.settings.myName || '';
+  const r = Store.state.room;
+  if (r) Together.join(r, r.myName, roomHandlers);
+
+  const hash = Together.readHash();
+  if (hash) {
+    Together.clearHash();
+    if (hash.kind === 'join') {
+      if (r && r.id === hash.room.id) toast("You're already in that room.");
+      else showJoinCard(hash.room);
+    } else if (hash.kind === 'result') {
+      applyResultLink(hash.result);
+      switchView('together');
+    } else if (hash.kind === 'live') {
+      switchView('together');
+      if (hash.payload.k === 'o') {
+        Together.answerLiveInvite(hash.payload).then(reply => {
+          $('#live-box').hidden = false; $('#live-warn').hidden = false;
+          $('#live-link').textContent = reply;
+          $('#live-state').textContent = 'Send this reply link back to them.';
+        }).catch(e => toast(e.message));
+      } else {
+        Together.completeLive(hash.payload).catch(e => toast(e.message));
+      }
+    }
+  }
+  setInterval(roomTick, 1000);
+}
+
 /* ================================ VIEWS ================================ */
 function switchView(name) {
   $$('.tab').forEach(t => t.classList.toggle('is-active', t.dataset.view === name));
@@ -643,6 +1062,7 @@ function switchView(name) {
   if (name === 'insights') renderInsights();
   if (name === 'journal') renderHistory();
   if (name === 'plan') renderPlanLists();
+  if (name === 'together') renderTogether();
 }
 
 /* ================================ SOUND ================================ */
@@ -800,6 +1220,8 @@ function wire() {
   $('#rec-btn').onclick = () => recTimer ? stopRecording() : startRecording();
   $('#rec-type').onclick = () => { stopRecording(); $('#journal-text').focus(); };
 
+  wireTogether();
+
   /* wipe */
   $('#wipe').onclick = () => {
     if (!confirm('Erase every session, plan and setting stored in this browser?')) return;
@@ -864,6 +1286,7 @@ function init() {
   wire();
   updateNotifState();
   restoreActive();
+  initTogether();
   renderAll();
   loadQuote(false);
   applyTimeMode();

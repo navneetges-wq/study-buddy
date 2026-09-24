@@ -24,12 +24,14 @@
     <button class="chip" id="chip-weather" title="Focus weather">🌡️ <span>Set location</span></button>
     <div class="chip" id="chip-streak" title="Study streak">🔥 <span>0 days</span></div>
     <div class="chip" id="chip-goal" title="Today vs daily goal">🎯 <span>0 / 60m</span></div>
+    <div class="chip" id="chip-level" title="Focus level">🌫️ <span>Lv 1</span></div>
   </div>
 </header>
 
 <nav class="tabs" id="tabs">
   <button class="tab is-active" data-view="today">Today</button>
   <button class="tab" data-view="plan">Plan</button>
+  <button class="tab" data-view="together">Together</button>
   <button class="tab" data-view="insights">Insights</button>
   <button class="tab" data-view="journal">Journal</button>
 </nav>
@@ -98,6 +100,17 @@
     </div>
     </div><!-- /focus-side -->
     </div><!-- /focus-body -->
+
+    <div class="partner" id="partner-panel" hidden>
+      <div class="partner-head">
+        <span class="pdot" id="partner-dot"></span>
+        <b id="partner-name">Your friend</b>
+        <span class="pill" id="partner-state">waiting</span>
+        <button class="btn small" id="nudge-btn" title="Make their page flash">👋 Nudge</button>
+      </div>
+      <div class="partner-stats" id="partner-stats"></div>
+      <div class="lead" id="partner-lead"></div>
+    </div>
 
     <div class="distract" id="distract-row" hidden>
       <span class="k">Got pulled away? Log it:</span>
@@ -197,8 +210,94 @@
   </div>
 </section>
 
+<!-- ============================ TOGETHER ============================ -->
+<section class="view" id="view-together">
+
+  <div class="card join-card" id="join-card" hidden>
+    <div class="card-head"><h2>📨 You've been invited</h2></div>
+    <p class="headline" id="join-text">—</p>
+    <div class="row">
+      <label class="field"><span>Your name</span><input type="text" id="join-name" maxlength="24" placeholder="Your name"></label>
+      <button class="btn primary" id="join-accept">Join the session</button>
+      <button class="btn" id="join-decline">No thanks</button>
+    </div>
+  </div>
+
+  <div class="card" id="room-live" hidden>
+    <div class="card-head">
+      <h2>👥 In a room with <span id="room-partner">a friend</span></h2>
+      <span class="pill" id="room-status">solo</span>
+    </div>
+    <div class="room-grid" id="room-grid"></div>
+
+    <div class="livesync">
+      <div class="row between">
+        <span class="k">Live stats across devices <span class="muted">(optional)</span></span>
+      </div>
+      <p class="muted" id="live-explain">Same browser, two tabs? Stats already flow. On separate devices, swap one link
+        each way to open a direct peer-to-peer channel — nothing goes through a server.</p>
+      <div class="row">
+        <button class="btn" id="live-create">🔗 Create live link</button>
+        <button class="btn" id="live-paste">📥 Paste their link</button>
+        <span class="muted" id="live-state"></span>
+      </div>
+      <div class="linkbox" id="live-box" hidden>
+        <code id="live-link"></code>
+        <button class="btn small" id="live-copy">Copy</button>
+      </div>
+      <p class="warn-note" id="live-warn" hidden>⚠️ A live link contains your network address. Share it with your study
+        partner only — the plain invite link above never contains it.</p>
+    </div>
+
+    <div class="row">
+      <button class="btn small" id="room-invite-copy">📋 Copy invite link</button>
+      <button class="btn small" id="room-result-copy" hidden>🏁 Copy my result link</button>
+      <button class="btn small primary" id="room-rematch" hidden>🔁 Rematch</button>
+      <button class="btn small danger-ghost" id="room-leave">Leave room</button>
+    </div>
+  </div>
+
+  <div class="card" id="room-make">
+    <div class="card-head"><h2>🤝 Study with a friend</h2></div>
+    <p class="muted">Both timers run off the same clock, so you start and finish together. Whoever keeps their eyes on
+      the page wins the duel. Nobody needs an account.</p>
+    <div class="row wrap">
+      <label class="field"><span>Your name</span><input type="text" id="room-name" maxlength="24" placeholder="Your name"></label>
+      <label class="field"><span>Length</span><input type="number" id="room-dur" min="5" max="180" value="45"></label>
+      <label class="field"><span>Starts in</span><input type="number" id="room-lead" min="1" max="60" value="5"></label>
+      <button class="btn primary" id="room-create">Create the room</button>
+    </div>
+    <div class="linkbox" id="invite-box" hidden>
+      <code id="invite-link"></code>
+      <button class="btn small" id="invite-copy">Copy</button>
+    </div>
+    <p class="muted" id="invite-hint" hidden>Send that to your friend. When the clock hits the start time, both sides
+      begin automatically — even if you never manage to connect live.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>⚔️ Rivals</h2><span class="muted" id="co-streak"></span></div>
+    <div id="rivals"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>🏁 Recent duels</h2></div>
+    <div id="duel-list" class="list"></div>
+  </div>
+</section>
+
 <!-- ============================ INSIGHTS ============================ -->
 <section class="view" id="view-insights">
+  <div class="card level-card">
+    <div class="card-head"><h2>⭐ Focus level</h2><span class="pill" id="level-xp">0 XP</span></div>
+    <div id="level-box"></div>
+  </div>
+
+  <div class="card achievements">
+    <div class="card-head"><h2>🏆 Achievements</h2><span class="muted" id="ach-count"></span></div>
+    <div class="ach-grid" id="ach-grid"></div>
+  </div>
+
   <div class="card">
     <div class="card-head"><h2>📊 Your numbers</h2></div>
     <div class="stat-grid" id="stat-grid"></div>
@@ -281,9 +380,25 @@
   </div>
 </div>
 
+<div class="modal-back" id="duel-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="duel-title">
+    <div class="modal-head">
+      <h2 id="duel-title">Duel result</h2>
+      <button class="ghost-btn" id="duel-close" aria-label="Close">✕</button>
+    </div>
+    <div id="duel-body"></div>
+    <div class="modal-foot">
+      <span class="next-suggest" id="duel-record"></span>
+      <button class="btn primary" id="duel-ok">Nice</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/store.js"></script>
 <script src="js/ambience.js"></script>
 <script src="js/services.js"></script>
+<script src="js/progress.js"></script>
+<script src="js/together.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
