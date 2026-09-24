@@ -78,6 +78,13 @@ drawer instead of cluttering the screen you stare at while working.
 
 ## Hands-free
 
+It is the most distinctive thing ally does, so it is not buried in a menu. There is a mic
+button in the header that is styled unlike every other chip, a prompt above the timer until
+you have discovered it, a control in the focus-card tray, and the `M` key. The listening bar
+stays on screen during full-screen focus — that is precisely when you do not want to reach for
+a keyboard.
+
+
 Turn on hands-free and the whole app answers to your voice. One click to allow the
 microphone — no browser lets a page open the mic without it — and after that nothing needs
 touching. The permission is remembered per origin, so on your next visit it arms itself.

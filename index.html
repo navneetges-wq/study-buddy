@@ -34,6 +34,9 @@
     <div class="chip" id="chip-streak" title="Streak">0 days</div>
     <div class="chip" id="chip-goal" title="Today vs daily goal">0 / 60m</div>
     <div class="chip" id="chip-level" title="Focus level">Lv 1</div>
+    <button class="chip mic" id="mic-btn" title="Hands-free voice control" aria-pressed="false">
+      <span class="mic-dot"></span><span id="mic-label">Hands-free</span>
+    </button>
     <button class="chip icon" id="open-settings" title="Settings" aria-label="Settings">⚙</button>
   </div>
 </header>
@@ -55,6 +58,17 @@
     <p id="quote-text">Loading a quote…</p>
     <cite id="quote-author"></cite>
     <button class="ghost-btn" id="quote-refresh" title="Another quote">↻</button>
+  </div>
+
+  <div class="voice-promo" id="voice-promo" hidden>
+    <span class="vp-mark"><span class="mic-dot"></span></span>
+    <div class="vp-text">
+      <b>Run ally without touching anything</b>
+      <span>Say <i>“Ally, start 45 minutes”</i> — start, pause, log a distraction, ask how you're
+        doing. It answers out loud.</span>
+    </div>
+    <button class="btn primary small" id="promo-voice">Turn on</button>
+    <button class="ghost-btn" id="promo-hide" title="Hide" aria-label="Hide">✕</button>
   </div>
 
   <div class="card focus-card" id="focus-card">
@@ -137,7 +151,7 @@
 
     <div class="tray">
       <button class="tray-btn" id="quick-sound">Sound <span id="quick-sound-name">off</span></button>
-      <button class="tray-btn" id="quick-voice">Hands-free <span id="quick-voice-state">off</span></button>
+      <button class="tray-btn mic-tray" id="quick-voice"><span class="mic-dot"></span>Hands-free <span id="quick-voice-state">off</span></button>
       <button class="tray-btn" id="quick-settings">Settings</button>
     </div>
   </div>
@@ -369,7 +383,7 @@
   </section>
 
   <section class="dsec">
-    <h3>Hands-free <span class="pill" id="voice-pill">Off</span></h3>
+    <h3>Hands-free options <span class="pill" id="voice-pill">Off</span></h3>
     <p class="muted" id="voice-blurb">Say “Ally, start 45 minutes”. One click to allow the
       microphone, then everything else is voice.</p>
     <div class="row">

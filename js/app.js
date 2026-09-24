@@ -1060,8 +1060,17 @@ function wireShell() {
     paintSound();
   };
   $('#quick-voice').onclick = () => VoiceControl.on ? voiceOff() : voiceOn();
+  $('#mic-btn').onclick = () => VoiceControl.on ? voiceOff() : voiceOn();
+  $('#promo-voice').onclick = voiceOn;
+  $('#promo-hide').onclick = () => { Store.set('promoHidden', true); renderVoice(VoiceControl.state()); };
 
   document.addEventListener('keydown', e => {
+    if ((e.key === 'm' || e.key === 'M') && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)
+        && $('#autopsy').hidden && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault();
+      VoiceControl.on ? voiceOff() : voiceOn();
+      return;
+    }
     if (e.key !== 'Escape') return;
     if (!$('#drawer').hidden) closeDrawer();
     else if (document.body.classList.contains('focus-mode')) { zenOff = true; syncZen(); document.body.classList.remove('focus-mode'); }
@@ -1271,6 +1280,21 @@ function voiceOff() {
 function renderVoice(st) {
   const bar = $('#voicebar');
   if (!bar) return;
+
+  /* Hands-free is the app's signature, so it gets three homes: a button in
+     the header, a prompt on Today until it's discovered, and the tray on
+     the focus card (the one that survives full-screen focus). */
+  const mic = $('#mic-btn');
+  if (mic) {
+    mic.className = 'chip mic' + (st.dictating ? ' rec' : st.on ? ' on' : '');
+    mic.setAttribute('aria-pressed', st.on ? 'true' : 'false');
+    mic.hidden = !st.supported;
+    $('#mic-label').textContent = st.dictating ? 'Recording' : st.on ? 'Listening' : 'Hands-free';
+  }
+  const promo = $('#voice-promo');
+  if (promo) promo.hidden = st.on || !st.supported || Store.state.settings.promoHidden === true;
+  $('#quick-voice').classList.toggle('on', st.on);
+
   bar.hidden = !st.on;
   bar.className = 'voicebar' + (st.listening ? ' live' : '') + (st.dictating ? ' dictating' : '');
   document.body.classList.toggle('voice-on', st.on);     // keep the bar off the footer

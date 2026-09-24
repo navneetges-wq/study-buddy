@@ -180,25 +180,24 @@ body.focus-mode .topbar,
 body.focus-mode .tabs,
 body.focus-mode .quoteline,
 body.focus-mode .quickstrip,
-body.focus-mode .foot,
-body.focus-mode .voicebar{display:none !important}
+body.focus-mode .foot{display:none !important}
 body.focus-mode{padding-bottom:0}
 body.focus-mode main{max-width:none;padding:0}
 body.focus-mode .focus-card{
   min-height:100vh;border:0;border-radius:0;background:var(--bg);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  display:flex;flex-direction:column;align-items:center;justify-content:safe center;
   padding:78px 24px 64px;text-align:center;position:relative;
 }
 body.focus-mode .card-head{position:absolute;top:24px;right:26px;left:26px;margin:0}
-body.focus-mode .dial-wrap{width:min(300px,52vw,42vh);height:min(300px,52vw,42vh)}
+body.focus-mode .dial-wrap{width:min(280px,50vw,34vh);height:min(280px,50vw,34vh)}
 body.focus-mode .dial-time{font-size:clamp(42px,7vw,62px)}
 body.focus-mode .dial-sub{max-width:220px}
-body.focus-mode .focus-body{flex-direction:column;gap:30px;align-items:center;width:100%}
+body.focus-mode .focus-body{flex-direction:column;gap:22px;align-items:center;width:100%}
 body.focus-mode .focus-side{flex:none;width:min(540px,100%);min-width:0}
 body.focus-mode .controls{justify-content:center;margin-top:0}
-body.focus-mode .live{margin-top:20px}
+body.focus-mode .live{margin-top:16px}
 body.focus-mode .partner,
-body.focus-mode .distract{width:min(600px,100%);border-top:0;margin-top:26px}
+body.focus-mode .distract{width:min(600px,100%);border-top:0;margin-top:18px}
 body.focus-mode .dbtns,
 body.focus-mode .queue,
 body.focus-mode .partner-head{justify-content:center}
@@ -410,3 +409,40 @@ body.nudged{animation:nudge-flash .55s 2}
   .tab{flex:none}
   .chips{width:100%}
 }
+
+/* ========================= hands-free, made loud ========================= */
+.mic-dot{
+  width:7px;height:7px;border-radius:50%;background:currentColor;flex:none;
+  box-shadow:0 0 0 3px color-mix(in srgb, currentColor 22%, transparent);
+}
+.chip.mic{
+  border-color:color-mix(in srgb, var(--accent) 45%, transparent);
+  color:var(--accent);font-weight:500;
+}
+.chip.mic:hover{border-color:var(--accent);color:var(--accent)}
+.chip.mic.on{background:var(--accent);border-color:var(--accent);color:#0a0c11}
+.chip.mic.on .mic-dot{animation:pulse-dot 1.6s infinite}
+.chip.mic.rec{background:var(--bad);border-color:var(--bad);color:#0a0c11}
+@keyframes pulse-dot{50%{opacity:.35}}
+
+.voice-promo{
+  display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+  background:var(--accent-soft);border:1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-left:3px solid var(--accent);border-radius:var(--r);padding:15px 18px;
+}
+.vp-mark{color:var(--accent);display:flex;align-items:center}
+.vp-text{flex:1;min-width:210px;display:flex;flex-direction:column;gap:2px}
+.vp-text b{font-size:14px;font-weight:600}
+.vp-text span{color:var(--dim);font-size:13px}
+.vp-text i{color:var(--accent);font-style:italic}
+
+.tray-btn.mic-tray{color:var(--accent)}
+.tray-btn.mic-tray.on{color:var(--accent);font-weight:600}
+.tray-btn.mic-tray .mic-dot{display:inline-block;margin-right:6px;vertical-align:middle}
+.tray-btn.mic-tray.on .mic-dot{animation:pulse-dot 1.6s infinite}
+
+/* the voice bar belongs in focus mode most of all */
+body.focus-mode .voicebar:not([hidden]){display:flex !important;bottom:64px}
+/* the voice bar floats above everything, so reserve room beneath the content */
+body.focus-mode.voice-on .focus-card{padding-bottom:150px}
+body.focus-mode.voice-on .tray{bottom:98px}
