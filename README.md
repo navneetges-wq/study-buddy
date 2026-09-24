@@ -2,6 +2,8 @@
 
 **Plan less. Focus better. Understand how you study.**
 
+**Live app: https://navneetges-wq.github.io/study-buddy/**
+
 You don't tell Study Buddy *what* you're studying. It learns *how* you study — when you're
 sharpest, how long you last before you drift, what pulls you away, and how often you come back.
 
