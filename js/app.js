@@ -145,9 +145,9 @@ function logDistraction(type) {
   renderTimer();
 }
 
-function discard() {
+function discard(skipConfirm) {
   if (!A) return;
-  if (!confirm('Discard this session? Nothing will be saved.')) return;
+  if (!skipConfirm && !confirm('Discard this session? Nothing will be saved.')) return;
   A = null; Store.saveActive(null);
   renderTimer();
 }
@@ -478,6 +478,14 @@ function openAutopsy(s) {
     next.innerHTML = `<button class="btn small" id="take-break">☕ Take a ${Store.state.settings.breakMin} minute break</button>`;
   }
   $('#autopsy').hidden = false;
+
+  if (VoiceControl.on) {                       // hands-free: read the verdict, then listen
+    const mins = Math.round(s.focusedMs / 60000);
+    VoiceControl.say(
+      `Session complete. ${mins} minute${mins === 1 ? '' : 's'} focused, focus score ${s.score} percent, ` +
+      `${s.tabSwitches} tab leave${s.tabSwitches === 1 ? '' : 's'}. How did it go?`,
+      { then: startVoiceJournal });
+  }
 }
 
 function closeAutopsy(startNext) {
@@ -504,6 +512,7 @@ function saveAutopsy() {
 }
 
 function startRecording() {
+  if (VoiceControl.on) { startVoiceJournal(); return; }
   if (!Speech.supported) return;
   recLeft = 60;
   $('#rec-btn').classList.add('rec');
@@ -528,6 +537,7 @@ function startRecording() {
 }
 
 function stopRecording(fromEnd) {
+  if (VoiceControl.state().dictating) VoiceControl.endDictation();
   if (recTimer) { clearInterval(recTimer); recTimer = null; }
   if (recHandle && !fromEnd) { Speech.stop(); }
   recHandle = null;
@@ -542,6 +552,7 @@ async function refreshWeather(place) {
   if (!p) return;
   try {
     const w = await Weather.current(p.lat, p.lon);
+    lastWeather = { ...w, place: p.name };
     document.documentElement.dataset.mode = w.mood;
     $('#chip-weather').innerHTML = `${w.emoji} <span>${w.temp}° · ${esc(p.name)}</span>`;
     $('#chip-weather').title = `${w.label} — ${w.mood === 'night' ? 'Night Focus Mode' : w.rainy ? 'Rainy Focus Mode' : 'Focus Mode'}`;
@@ -1055,6 +1066,326 @@ function initTogether() {
   setInterval(roomTick, 1000);
 }
 
+/* ============================== HANDS-FREE ============================== */
+let lastWeather = null;
+const SAY_LIST = [
+  ['Buddy, start 45 minutes', 'begins a focus session'],
+  ['Buddy, pause / resume', 'holds the clock and picks it up again'],
+  ['Buddy, add five minutes', 'extends the session'],
+  ['Buddy, finish', 'ends the session and opens the autopsy'],
+  ['Buddy, take a five minute break', 'starts a break'],
+  ['Buddy, I got distracted by my phone', 'logs the distraction'],
+  ['Buddy, play rain / stop the music', 'controls the focus sound'],
+  ['Buddy, louder / quieter', 'nudges the volume'],
+  ['Buddy, I have 35 minutes', 'shapes the time into blocks and starts'],
+  ['Buddy, plan 40 minutes at 8pm', 'schedules a session for later'],
+  ['Buddy, how long left', 'reads out the time remaining'],
+  ['Buddy, how am I doing', 'reads out focus, tab leaves, distractions'],
+  ['Buddy, what is my streak / level', 'reads out your progress'],
+  ['Buddy, read me the quote', 'reads today’s quote aloud'],
+  ['Buddy, what is the weather', 'reads the current conditions'],
+  ['Buddy, set my goal to 90 minutes', 'changes the daily target'],
+  ['Buddy, set my city to Chennai', 'sets the weather location'],
+  ['Buddy, create a room', 'starts a co-study room and copies the link'],
+  ['Buddy, nudge', 'pokes your study partner'],
+  ['Buddy, show insights / journal / plan', 'switches view'],
+  ['Buddy, it was good', 'answers the mood question after a session'],
+  ['Buddy, stop listening', 'turns hands-free off']
+];
+
+function vbDid(msg, cls) {
+  const el = $('#vb-did');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'vb-did ' + (cls || 'ok');
+}
+function voiceSay(text, opts) { vbDid(text); VoiceControl.say(text, opts); }
+
+function voiceOn() {
+  if (!VoiceControl.supported) {
+    toast('This browser has no speech recognition. Chrome or Edge can do it — the typed command box works everywhere.');
+    return;
+  }
+  Store.set('handsFree', true);
+  VoiceControl.start();
+  voiceSay('Hands-free is on. Say: buddy, start 25 minutes.');
+}
+function voiceOff() {
+  Store.set('handsFree', false);
+  VoiceControl.stop();
+  renderVoice(VoiceControl.state());
+}
+
+function renderVoice(st) {
+  const bar = $('#voicebar');
+  if (!bar) return;
+  bar.hidden = !st.on;
+  bar.className = 'voicebar' + (st.listening ? ' live' : '') + (st.dictating ? ' dictating' : '');
+  document.body.classList.toggle('voice-on', st.on);     // keep the bar off the footer
+  $('#voice-pill').textContent = !st.supported ? 'Not supported here'
+    : st.dictating ? 'Recording' : st.on ? (st.listening ? 'Listening' : 'Starting…') : 'Off';
+  $('#voice-toggle').textContent = st.on ? '⏹ Turn off hands-free' : '🎙️ Turn on hands-free';
+  $('#wake-toggle').checked = st.requireWake;
+  if (st.dictating) $('#vb-heard').textContent = 'Recording your reflection — say “done” when you finish.';
+}
+
+/* --------------------------- the command desk --------------------------- */
+function handleIntent(p) {
+  if (!p.intent) {
+    if (p.woke) voiceSay('I didn’t catch a command. Say: buddy, help.');
+    return;
+  }
+  const SOUNDS = { rain: 'rain', waves: 'waves', ocean: 'waves', 'café': 'cafe', cafe: 'cafe',
+                   coffee: 'cafe', night: 'night', crickets: 'night', 'lo-fi': 'lofi', 'lo fi': 'lofi',
+                   lofi: 'lofi', music: 'lofi', 'white noise': 'white', 'brown noise': 'brown', noise: 'white' };
+
+  switch (p.intent) {
+    case 'wake': voiceSay('Listening.'); break;
+
+    case 'help':
+      switchView('today');
+      const d = $('.cmds'); if (d) d.open = true;
+      voiceSay('You can say: start 25 minutes. pause. resume. add five minutes. finish. ' +
+               'take a break. I got distracted by my phone. play rain. how long left. ' +
+               'how am I doing. create a room. or show insights. The full list is on screen.');
+      break;
+
+    case 'voice.off': voiceSay('Hands-free off.', { then: voiceOff }); break;
+
+    case 'start': {
+      if (A) { voiceSay('A session is already running.'); break; }
+      const min = p.min || currentDuration();
+      switchView('today');
+      startFocus(min, p.micro ? 'micro' : 'focus');
+      voiceSay(`Starting ${min} minute${min === 1 ? '' : 's'}. Go.`);
+      break;
+    }
+    case 'pause':
+      if (A && !A.paused) { togglePause(); voiceSay('Paused.'); }
+      else voiceSay(A ? 'Already paused.' : 'Nothing is running.');
+      break;
+    case 'resume':
+      if (A && A.paused) { togglePause(); voiceSay('Back to it.'); }
+      else voiceSay(A ? 'Already running.' : 'Nothing to resume.');
+      break;
+    case 'extend': {
+      const m = p.min || 5;
+      if (A) { extend(m); voiceSay(`Added ${m} minutes.`); } else voiceSay('No session to extend.');
+      break;
+    }
+    case 'finish':
+      if (A) { voiceSay('Wrapping up.'); finish(false); } else voiceSay('Nothing to finish.');
+      break;
+    case 'discard':
+      if (A) { discard(true); voiceSay('Discarded. Nothing saved.'); } else voiceSay('Nothing to discard.');
+      break;
+    case 'break': {
+      const m = p.min || Store.state.settings.breakMin;
+      if (A) finish(false);
+      startBreak(m);
+      voiceSay(`${m} minute break. Stand up.`);
+      break;
+    }
+    case 'skipbreak':
+      if (brk) { endBreak(true); voiceSay('Break skipped.'); } else voiceSay('No break running.');
+      break;
+
+    case 'distract':
+      if (A) {
+        logDistraction(p.type);
+        voiceSay(`${DISTRACTIONS[p.type].label} logged. Back to it.`);
+      } else voiceSay('Log distractions while a session is running.');
+      break;
+
+    case 'sound': {
+      const key = SOUNDS[p.which] || 'rain';
+      Store.set('ambience', key); Ambience.play(key); paintSound();
+      voiceSay(`Playing ${key === 'lofi' ? 'lo-fi' : key}.`);
+      break;
+    }
+    case 'sound.off': Ambience.stop(); paintSound(); voiceSay('Sound off.'); break;
+    case 'volume': {
+      const v = Math.max(0, Math.min(1, Store.state.settings.volume + p.delta));
+      Store.set('volume', v); Ambience.setVolume(v); $('#volume').value = Math.round(v * 100);
+      voiceSay(`Volume ${Math.round(v * 100)} percent.`);
+      break;
+    }
+
+    case 'shape': {
+      switchView('today');
+      previewPlan(p.min);
+      const go = $('#start-shaped');
+      voiceSay(`${p.min} minutes. Shaping it into blocks.`, { then: () => go && go.click() });
+      break;
+    }
+    case 'plan': {
+      const parsed = Parser.parse(p.phrase);
+      Store.addPlanned(parsed.at, parsed.durationMin);
+      renderPlanLists();
+      voiceSay(`Planned: ${parsed.durationMin} minutes, ${fmtWhen(parsed.at)}.`);
+      break;
+    }
+
+    case 'room.create': {
+      const name = Store.state.settings.myName || 'Me';
+      const room = Together.makeRoom({ name, durationMin: currentDuration(), startInMin: 5 });
+      enterRoom(room, name);
+      copyText(Store.state.room.invite, 'Invite link');
+      switchView('together');
+      voiceSay(`Room made for ${room.durationMin} minutes, starting in five. The invite link is on your clipboard.`);
+      break;
+    }
+    case 'room.nudge':
+      if (Store.state.room) { Together.nudge(); voiceSay('Nudged.'); } else voiceSay('You are not in a room.');
+      break;
+    case 'room.rematch':
+      if (Store.state.room) { $('#room-rematch').click(); } else voiceSay('No room to rematch.');
+      break;
+    case 'room.copy':
+      if (Store.state.room) { copyText(Store.state.room.invite, 'Invite link'); voiceSay('Invite link copied.'); }
+      else voiceSay('You are not in a room.');
+      break;
+
+    /* ------------------------- questions, answered ------------------------- */
+    case 'ask.time':
+      if (A) voiceSay(`${fmtDur(Math.max(0, A.plannedMs - A.focusedMs))} left.`);
+      else if (brk) voiceSay(`${fmtDur(brk.endsAt - Date.now())} of break left.`);
+      else voiceSay('No session running.');
+      break;
+    case 'ask.status': {
+      if (!A) {
+        const t = Store.totals();
+        voiceSay(`Today you have focused ${fmtShort(Store.todayMs())}. Average focus score ${t.avgScore} percent.`);
+        break;
+      }
+      const away = A.awayMs, manual = A.distractions.filter(x => x.type !== 'tab').length;
+      voiceSay(`${fmtDur(A.focusedMs)} focused, ${A.tabSwitches} tab leave${A.tabSwitches === 1 ? '' : 's'}, ` +
+               `${fmtDur(away)} away, ${manual} distraction${manual === 1 ? '' : 's'} logged.`);
+      break;
+    }
+    case 'ask.streak': {
+      const st = Store.streak();
+      voiceSay(st.current
+        ? `${st.current} day streak. ${st.studiedToday ? 'Today is counted.' : 'Today is not counted yet.'}`
+        : 'No streak yet. Finish a session today to start one.');
+      break;
+    }
+    case 'ask.level': {
+      const lv = Progress.level(Store.state.progress.xp);
+      voiceSay(`Level ${lv.n}, ${lv.name}. ${lv.xp} XP${lv.ceil ? `, ${lv.toNext} to ${lv.nextName}` : ''}.`);
+      break;
+    }
+    case 'ask.quote':
+      voiceSay(`${$('#quote-text').textContent} ${$('#quote-author').textContent}`);
+      break;
+    case 'ask.weather':
+      voiceSay(lastWeather
+        ? `${lastWeather.label}, ${lastWeather.temp} degrees in ${lastWeather.place}.`
+        : 'No location set. Say: buddy, set my city to, then the name.');
+      break;
+
+    case 'goal': {
+      if (!p.min || isNaN(p.min)) { voiceSay('Say it with a number, like: set my goal to ninety minutes.'); break; }
+      const v = Math.max(5, Math.min(600, p.min));
+      Store.set('dailyGoalMin', v); $('#goal-input').value = v; renderChips(); renderInsights();
+      voiceSay(`Daily goal is now ${v} minutes.`);
+      break;
+    }
+    case 'city': {
+      const place = (p.place || '').replace(/\b(please|thanks)\b/g, '').trim();
+      if (!place) { voiceSay('Which city?'); break; }
+      voiceSay(`Looking up ${place}.`);
+      Weather.geocode(place)
+        .then(loc => { Store.set('place', loc); return refreshWeather(loc); })
+        .then(() => voiceSay(lastWeather ? `${lastWeather.label}, ${lastWeather.temp} degrees in ${lastWeather.place}.` : 'Location set.'))
+        .catch(e => voiceSay('I could not find that place.'));
+      break;
+    }
+
+    case 'view':
+      switchView(p.view);
+      vbDid('Showing ' + p.view);
+      break;
+
+    case 'mood': {
+      if ($('#autopsy').hidden) { voiceSay('No session to rate right now.'); break; }
+      const map = { great: 'great', good: 'good', ok: 'ok', okay: 'ok', fine: 'ok',
+                    rough: 'rough', bad: 'bad', terrible: 'bad', awful: 'bad' };
+      const chip = $(`#moods .mchip[data-m="${map[p.mood] || 'ok'}"]`);
+      if (chip) chip.click();
+      voiceSay('Saved.', { then: () => { if (!$('#autopsy').hidden) saveAutopsy(); } });
+      break;
+    }
+    case 'save':
+      if (!$('#autopsy').hidden) voiceSay('Saved.', { then: () => { if (!$('#autopsy').hidden) saveAutopsy(); } });
+      else voiceSay('Nothing to save.');
+      break;
+
+    default: vbDid('Unhandled: ' + p.intent, 'no');
+  }
+}
+
+/* ------------------ speaking your reflection, hands-free ------------------ */
+function startVoiceJournal() {
+  if ($('#autopsy').hidden) return;
+  const btn = $('#rec-btn');
+  btn.classList.add('rec'); btn.textContent = '⏹ Stop';
+  let left = 60;
+  $('#rec-timer').textContent = left + 's';
+  const tick = setInterval(() => { $('#rec-timer').textContent = Math.max(0, --left) + 's'; }, 1000);
+  VoiceControl.dictate({
+    limitMs: 60000,
+    onText: t => { $('#journal-text').value = t; },
+    onDone: t => {
+      clearInterval(tick);
+      btn.classList.remove('rec'); btn.textContent = '🎙️ Start reflection';
+      $('#journal-text').value = t;
+      renderVoice(VoiceControl.state());
+      VoiceControl.say(t ? 'Got that. How did it feel — great, good, okay, rough or bad?'
+                         : 'Nothing recorded. Say: save, when you are ready.');
+    }
+  });
+  renderVoice(VoiceControl.state());
+}
+
+function wireVoice() {
+  $('#cmd-grid').innerHTML = SAY_LIST
+    .map(([say, does]) => `<div class="cmd"><b>“${esc(say)}”</b><span>${esc(does)}</span></div>`).join('');
+
+  $('#voice-toggle').onclick = () => VoiceControl.on ? voiceOff() : voiceOn();
+  $('#voice-off').onclick = voiceOff;
+  $('#wake-toggle').onchange = e => VoiceControl.setWake(e.target.checked);
+  $('#voice-run').onclick = () => {
+    const v = $('#voice-type').value.trim();
+    if (!v) return;
+    $('#voice-type').value = '';
+    $('#vb-heard').textContent = v;
+    const parsed = VoiceControl.simulate(v);
+    if (!parsed || !parsed.intent) toast('I don’t know that one. Open “What can I say?” for the list.');
+  };
+  $('#voice-type').addEventListener('keydown', e => { if (e.key === 'Enter') $('#voice-run').click(); });
+
+  VoiceControl.init({
+    onIntent: handleIntent,
+    onState: renderVoice,
+    onHeard: (text, final) => { $('#vb-heard').textContent = text || 'Listening…'; },
+    onError: kind => {
+      voiceOff();
+      toast(kind === 'mic-blocked'
+        ? 'Microphone access was blocked. Allow it in the address bar, then turn hands-free on again.'
+        : 'No microphone found.');
+    }
+  });
+
+  if (!VoiceControl.supported) {
+    $('#voice-toggle').disabled = true;
+    $('#voice-blurb').textContent = 'Speech recognition needs Chrome or Edge. The typed command box below works in every browser.';
+  } else if (Store.state.settings.handsFree) {
+    VoiceControl.start();          // permission is remembered per origin, so this just works on a return visit
+  }
+  renderVoice(VoiceControl.state());
+}
+
 /* ================================ VIEWS ================================ */
 function switchView(name) {
   $$('.tab').forEach(t => t.classList.toggle('is-active', t.dataset.view === name));
@@ -1095,7 +1426,7 @@ function wire() {
   $('#btn-pause').onclick = togglePause;
   $('#btn-extend').onclick = () => extend(5);
   $('#btn-finish').onclick = () => finish(false);
-  $('#btn-cancel').onclick = discard;
+  $('#btn-cancel').onclick = () => discard(false);
   $('#btn-skip-break').onclick = () => endBreak(true);
 
   $('#distract-row').addEventListener('click', e => {
@@ -1185,10 +1516,12 @@ function wire() {
     }
     btn.classList.add('rec'); btn.textContent = '🎙️ Listening…';
     heard.hidden = false; heard.textContent = 'Listening…';
+    VoiceControl.suspend();
     Speech.listen({
       onPartial: t => { heard.textContent = '“' + t + '”'; },
       onFinal: t => {
         btn.classList.remove('rec'); btn.textContent = '🎙️ Plan by voice';
+        VoiceControl.resume();
         if (!t) { heard.textContent = 'Didn’t catch that. Try “study for 40 minutes at 8 PM”.'; return; }
         const parsed = Parser.parse(t);
         Store.addPlanned(parsed.at, parsed.durationMin);
@@ -1198,6 +1531,7 @@ function wire() {
       },
       onError: e => {
         btn.classList.remove('rec'); btn.textContent = '🎙️ Plan by voice';
+        VoiceControl.resume();
         heard.textContent = e === 'not-allowed'
           ? 'Microphone permission was blocked. Use the fields above instead.'
           : 'Voice input failed (' + e + '). Use the fields above instead.';
@@ -1221,6 +1555,7 @@ function wire() {
   $('#rec-type').onclick = () => { stopRecording(); $('#journal-text').focus(); };
 
   wireTogether();
+  wireVoice();
 
   /* wipe */
   $('#wipe').onclick = () => {

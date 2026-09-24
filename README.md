@@ -52,6 +52,44 @@ uses Google's public STUN server to find a route; on a symmetric NAT (some mobil
 direct connection can fail, and the app falls back to the synced timer plus result links, which
 always work.
 
+## Hands-free
+
+Turn on hands-free and the whole app answers to your voice. One click to allow the
+microphone — no browser lets a page open the mic without it — and after that nothing needs
+touching. The permission is remembered per origin, so on your next visit it arms itself.
+
+    "Buddy, start 45 minutes"        "Buddy, how long left"
+    "Buddy, pause"                   "Buddy, how am I doing"
+    "Buddy, add five minutes"        "Buddy, what is my streak"
+    "Buddy, I got distracted by my phone"
+    "Buddy, play rain"               "Buddy, create a room"
+    "Buddy, I have 35 minutes"       "Buddy, show insights"
+
+22 commands in all, listed inside the app under *What can I say?*. Questions are answered out
+loud, so you can keep your eyes on the book.
+
+When a session ends, hands-free reads the autopsy back to you, starts the 60-second reflection
+by itself, and waits for your mood — *"it was good"* — then files the whole thing. From
+"Buddy, start 45 minutes" to a saved session with a spoken journal, nothing is clicked.
+
+A wake word is required by default so that reading aloud, a lecture in the background or a
+conversation can't fire commands by accident. You can switch it off for bare commands.
+
+### What to know before relying on it
+
+- **Chrome or Edge.** The Web Speech API doesn't exist in Firefox, and Safari's version is
+  unreliable for continuous listening. The app detects this and says so.
+- **Chrome sends the audio to Google's servers** to transcribe it. That is how the browser API
+  works, not a choice this app makes — but if you're studying somewhere sensitive, it's worth
+  knowing. Everything else in Study Buddy stays on your machine.
+- **Recognition stops while the tab is in the background.** Browsers suspend the mic there,
+  which matters in this app specifically, since leaving the tab is the thing it measures. You
+  can't say "resume" from another tab.
+- **A typed command box** sits next to the microphone button and runs the same grammar, so
+  every command is usable in any browser, with or without a mic.
+- The app talks back with speech synthesis. If that fails — no voices installed, muted device —
+  the command still runs; only the spoken reply is lost.
+
 ## What it does
 
 - **Focus timer** — start, pause, extend by 5, finish early, or let it complete itself.
@@ -61,6 +99,7 @@ always work.
 - **Session Autopsy** — planned vs actual focus, tab switches, time distracted, focus score.
 - **One-minute voice journal** — speak your reflection after a session; speech-to-text saves it.
 - **Voice planner** — "Study for 40 minutes at 8 PM" becomes a scheduled session.
+- **Hands-free mode** — 22 spoken commands, spoken answers, and an autopsy that interviews you.
 - **Reminders** — an in-app banner plus a browser notification when a planned session is due.
 - **Focus Fingerprint** — average session, best study period, when focus usually drops, your
   most common distraction, most productive day. Appears after 3 sessions.
@@ -97,6 +136,7 @@ js/ambience.js    Web Audio focus sounds and the end-of-session chime
 js/services.js    quotes API, weather API, speech recognition, voice-command parser
 js/progress.js    XP, focus levels and achievements
 js/together.js    rooms, invite/result links, BroadcastChannel and WebRTC transports
+js/voice-control.js  always-on speech recognition, the command grammar, spoken replies
 js/app.js         session engine, timers, reminders and rendering
 ```
 

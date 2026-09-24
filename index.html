@@ -147,6 +147,27 @@
     </div>
   </div>
 
+  <div class="card voice-card">
+    <div class="card-head">
+      <h2>🎙️ Hands-free</h2>
+      <span class="pill" id="voice-pill">Off</span>
+    </div>
+    <p class="muted" id="voice-blurb">Say <i>“Buddy, start 45 minutes”</i> and never touch the keyboard again.
+      One click to allow the microphone, then everything else is voice.</p>
+    <div class="row">
+      <button class="btn primary" id="voice-toggle">🎙️ Turn on hands-free</button>
+      <label class="check"><input type="checkbox" id="wake-toggle" checked> require “Buddy” first</label>
+    </div>
+    <div class="row">
+      <input type="text" id="voice-type" placeholder="…or type a command: start 25 minutes" aria-label="Type a command">
+      <button class="btn small" id="voice-run">Run</button>
+    </div>
+    <details class="cmds">
+      <summary>What can I say?</summary>
+      <div class="cmd-grid" id="cmd-grid"></div>
+    </details>
+  </div>
+
   <div class="card">
     <div class="card-head">
       <h2>🎵 Focus sound</h2>
@@ -339,6 +360,15 @@
   <button class="linky" id="wipe">Erase all my data</button>
 </footer>
 
+<div class="voicebar" id="voicebar" hidden>
+  <span class="mic" id="voice-mic">🎙️</span>
+  <div class="vb-text">
+    <div class="vb-heard" id="vb-heard">Listening…</div>
+    <div class="vb-did" id="vb-did">Say “Buddy, help” for the full list</div>
+  </div>
+  <button class="btn small" id="voice-off">Stop</button>
+</div>
+
 <!-- ============================ AUTOPSY MODAL ============================ -->
 <div class="modal-back" id="autopsy" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="autopsy-title">
@@ -399,6 +429,7 @@
 <script src="js/services.js"></script>
 <script src="js/progress.js"></script>
 <script src="js/together.js"></script>
+<script src="js/voice-control.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
