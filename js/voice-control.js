@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
-   voice-control.js — hands-free ally.
+   voice-control.js — hands-free Lockin.
 
    One recognition stream owns the microphone, restarts itself when the
    browser cuts it off, strips a wake word, matches the phrase against a
@@ -18,9 +18,9 @@ const VoiceControl = (function () {
   let hooks = {};
   let requireWake = true;
 
-  /* Speech recognition mishears short names constantly, so accept the
-     near-misses too ("alley", "ali", "allie") and keep the old name working. */
-  const WAKE = /^\s*(?:hey\s+|ok(?:ay)?\s+)?(?:ally|allie|alli|alie|ali|alley|rally|buddy)[\s,]*/i;
+  /* Recognition mangles short names constantly, so accept what Chrome
+     actually returns for "Lockin": lock in, locking, log in, lock-in. */
+  const WAKE = /^\s*(?:hey\s+|ok(?:ay)?\s+)?(?:lock\s?-?\s?in|lockin|locking|lockedin|locked in|log\s?in|loggin|lock|ally|buddy)\b[\s,]*/i;
 
   /* ------------------------------ grammar ------------------------------ */
   /* Order matters: the first rule that matches wins, so put the specific
@@ -107,19 +107,88 @@ const VoiceControl = (function () {
     [/(show|open|go to|switch to)?\s*(today|home|timer|dashboard)/, () => ({ intent: 'view', view: 'today' })]
   ];
 
+  /* Speech recognition is confidently wrong in predictable ways. Rather than
+     demand perfect transcription, clean the text up first. */
+  const FILLERS = /\b(um+|uh+|erm|hmm+|like|please|kindly|okay|alright|so|well|just|now then|can you|could you|i want to|i wanna|i would like to|let's|lets)\b/g;
+
+  const FIXES = [
+    [/\b(paws|pores|pose|pows|posed)\b/g, 'pause'],
+    [/\b(finnish|finishing|finished|finish it|done with this)\b/g, 'finish'],
+    [/\b(star|stark|starts|started|starting|staat)\b/g, 'start'],
+    [/\b(resumed|resuming|continue|carry on)\b/g, 'resume'],
+    [/\b(brake|brakes|breaks|braking)\b/g, 'break'],
+    [/\b(minuets|minuits|minit|minits|mints|minutes?|mins?)\b/g, 'minutes'],
+    [/\b(ours|hours?|hrs?)\b/g, 'hours'],
+    [/\bad\s+(?=\d|five|ten|fifteen)/g, 'add '],
+    [/\b(scrap|scrap it|throw it away|bin it)\b/g, 'discard'],
+    [/\b(distraction|distracting|distract)\b/g, 'distracted'],
+    [/\b(turn it up|volume up)\b/g, 'louder'],
+    [/\b(turn it down|volume down)\b/g, 'quieter'],
+    [/\b(low fi|low-fi|lofy|lofi beats)\b/g, 'lo-fi'],
+    [/\b(cafe|coffee shop)\b/g, 'cafe'],
+    [/\b(how long is left|how much is left|time remaining)\b/g, 'how long left']
+  ];
+
+  const NUMWORDS = { one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,
+    eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,
+    eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fourty:40,fifty:50,sixty:60,ninety:90 };
+
+  function normalise(raw) {
+    let t = String(raw).toLowerCase()
+      .replace(/[.,!?;:]/g, ' ')
+      .replace(/\b(\d+)\s*-\s*(\d+)\b/g, '$1$2')
+      .replace(/\s+/g, ' ').trim();
+    FIXES.forEach(([re, to]) => { t = t.replace(re, to); });
+    // "twenty five" -> 25, then any leftover single number word -> digits
+    t = t.replace(/\b(twenty|thirty|forty|fourty|fifty)[\s-](one|two|three|four|five|six|seven|eight|nine)\b/g,
+                  (m, a, b) => NUMWORDS[a] + NUMWORDS[b]);
+    t = t.replace(/\b(half an hour|half hour)\b/g, '30 minutes');
+    t = t.replace(/\b(an hour|one hour)\b/g, '60 minutes');
+    Object.keys(NUMWORDS).forEach(w => { t = t.replace(new RegExp('\\b' + w + '\\b', 'g'), NUMWORDS[w]); });
+    return t.replace(/\s+/g, ' ').trim();
+  }
+
+  function match(text) {
+    for (const [re, build] of GRAMMAR) {
+      const m = text.match(re);
+      if (m) return build(m);
+    }
+    return null;
+  }
+
   /** Turns a spoken phrase into an intent, or null when nothing fits. */
   function parse(raw) {
     if (!raw) return null;
-    let text = String(raw).toLowerCase().replace(/[.,!?;]/g, ' ').replace(/\s+/g, ' ').trim();
+    let text = normalise(raw);
     const woke = WAKE.test(text);
     if (woke) text = text.replace(WAKE, '').trim();
     if (requireWake && !woke) return { intent: null, woke: false, text };
+    text = text.replace(FILLERS, ' ').replace(/\s+/g, ' ').trim();
     if (!text) return { intent: 'wake', woke: true, text };
-    for (const [re, build] of GRAMMAR) {
-      const m = text.match(re);
-      if (m) return { ...build(m), woke, text };
+
+    let hit = match(text);
+    /* Anchored rules fail when a stray word survives at the front
+       ("so then start 25 minutes"), so shave words off and try again. */
+    let rest = text;
+    for (let i = 0; i < 3 && !hit; i++) {
+      const cut = rest.indexOf(' ');
+      if (cut < 0) break;
+      rest = rest.slice(cut + 1);
+      hit = match(rest);
     }
+    if (hit) return { ...hit, woke, text };
     return { intent: null, woke, text, unmatched: true };
+  }
+
+  /** Chrome offers several guesses; take the first that means something. */
+  function parseBest(candidates) {
+    let fallback = null;
+    for (const c of candidates) {
+      const p = parse(c);
+      if (p && p.intent) return p;
+      fallback = fallback || p;
+    }
+    return fallback;
   }
 
   /* ------------------------------ speaking ------------------------------ */
@@ -139,7 +208,7 @@ const VoiceControl = (function () {
     };
     if (!TTS || !text) { setTimeout(finish, 0); return; }
     const words = text.split(/\s+/).length;
-    const budget = Math.min(12000, Math.max(1400, words * 380));
+    const budget = Math.min(6000, Math.max(1200, words * 330));
     setTimeout(finish, budget);                                 // safety net
     try {
       TTS.cancel();
@@ -159,7 +228,7 @@ const VoiceControl = (function () {
     rec.lang = navigator.language || 'en-US';
     rec.continuous = true;
     rec.interimResults = true;
-    rec.maxAlternatives = 1;
+    rec.maxAlternatives = 5;   // its first guess is often not its best
 
     rec.onresult = e => {
       let interim = '', final = '';
@@ -188,7 +257,17 @@ const VoiceControl = (function () {
       const phrase = final.trim();
       if (phrase === lastFinal && Date.now() - lastFinalAt < 3000) return;   // browser echo
       lastFinal = phrase; lastFinalAt = Date.now();
-      const parsed = parse(phrase);
+
+      /* Collect every alternative Chrome offered for the final results in
+         this batch, best-ranked first, and use whichever one parses. */
+      const candidates = [];
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (!r.isFinal) continue;
+        for (let k = 0; k < r.length && k < 5; k++) candidates.push(r[k].transcript.trim());
+      }
+      if (!candidates.length) candidates.push(phrase);
+      const parsed = parseBest(candidates);
       if (!parsed) return;
       if (!parsed.intent && !parsed.woke) return;               // background chatter, ignore
       hooks.onIntent && hooks.onIntent(parsed);
@@ -275,11 +354,11 @@ const VoiceControl = (function () {
 
   /** Run a command as if it had been spoken — used by the typed fallback box. */
   function simulate(text) {
-    const parsed = parse(requireWake && !WAKE.test(text) ? 'ally ' + text : text);
+    const parsed = parse(requireWake && !WAKE.test(text) ? 'lockin ' + text : text);
     if (parsed) hooks.onIntent && hooks.onIntent(parsed);
     return parsed;
   }
 
   return { supported, init, start, stop, suspend, resume, dictate, endDictation,
-           say, parse, simulate, state, setWake, get on() { return on; } };
+           say, parse, parseBest, normalise, simulate, state, setWake, get on() { return on; } };
 })();

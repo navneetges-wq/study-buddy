@@ -58,9 +58,15 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
   c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 /* ------------------------------ banners ------------------------------ */
+const BOOT_AT = Date.now();
+const QUIET_MS = 7000;          // the first view should be calm, not a pile of pop-ups
+
 function banner(opts) {
   const slot = $('#banner-slot');
   if (opts.id && $(`[data-bid="${opts.id}"]`)) return;
+  /* Anything that wants to speak up during the opening seconds waits its
+     turn, unless the user's own click caused it. */
+  if (!opts.force && Date.now() - BOOT_AT < QUIET_MS) return;
   const el = document.createElement('div');
   el.className = 'banner' + (opts.kind === 'info' ? ' info' : '');
   if (opts.id) el.dataset.bid = opts.id;
@@ -125,6 +131,7 @@ function startFocus(minutes, kind, planId) {
 function togglePause() {
   if (!A) return;
   A.paused = !A.paused;
+  if (!A.paused) zenOff = false;               // pressing resume goes back to full-screen focus
   A.lastAt = Date.now();
   Store.saveActive(A);
   renderTimer();
@@ -393,7 +400,7 @@ function renderInsights() {
       ${fp('Most productive day', f.bestDay)}
       ${fp('Sessions finished in full', f.finishRate + '%')}
     </div>` : `
-    <p class="muted">Study ${f.need - f.have} more session${f.need - f.have === 1 ? '' : 's'} and ally
+    <p class="muted">Study ${f.need - f.have} more session${f.need - f.have === 1 ? '' : 's'} and Lockin
     will have enough to describe how you focus — when you're sharpest, how long you last, what pulls you away.</p>`;
 
   const split = Store.distractionSplit();
@@ -567,16 +574,7 @@ async function refreshWeather(place) {
     document.documentElement.dataset.mode = w.mood;
     $('#chip-weather').textContent = `${w.temp}° ${p.name}`;
     $('#chip-weather').title = `${w.label} — ${w.mood === 'night' ? 'Night Focus Mode' : w.rainy ? 'Rainy Focus Mode' : 'Focus Mode'}`;
-    if (w.rainy && Ambience.playing !== 'rain') {
-      banner({
-        id: 'rainy', kind: 'info',
-        text: `It's raining in ${p.name}. Rainy Focus Mode is on — want the rain sound to match?`,
-        actions: [{ label: 'Play rain', fn: () => { Ambience.play('rain'); Store.set('ambience', 'rain'); paintSound(); } }]
-      });
-    } else if (w.mood === 'night') {
-      banner({ id: 'night', kind: 'info', timeout: 8000,
-        text: 'Night Focus Mode — colours dimmed. Late sessions are shorter sessions; be kind to tomorrow-you.' });
-    }
+    /* The palette already shifts for rain and night. No announcement needed. */
   } catch (e) {
     console.warn('Weather unavailable', e);
     $('#chip-weather').textContent = 'Weather unavailable';
@@ -620,7 +618,7 @@ function checkReminders() {
     if (p.status !== 'pending') return;
     if (!p.leadNotified && now >= p.at - lead && now < p.at) {
       p.leadNotified = true; changed = true;
-      banner({ id: 'lead' + p.id,
+      banner({ id: 'lead' + p.id, force: true,
         text: `Your ${p.durationMin} minute session starts in ${fmtAgo(p.at - now)}. Wrap up what you're doing.` });
       Notify.push('Session coming up', `${p.durationMin} minutes, starting in ${fmtAgo(p.at - now)}.`);
     }
@@ -629,7 +627,7 @@ function checkReminders() {
       Ambience.chime(true);
       Notify.push('Time to focus', `Your ${p.durationMin} minute session is due now.`);
       banner({
-        id: 'due' + p.id,
+        id: 'due' + p.id, force: true,
         text: `It's time — ${p.durationMin} minute session.`,
         actions: [
           { label: 'Start now', fn: () => { startFocus(p.durationMin, 'focus', p.id); switchView('today'); } },
@@ -1174,7 +1172,7 @@ function wireTogether() {
  * Acts on an invite / result / live link in the address bar.
  *
  * This runs on load AND on hashchange: if your friend already has Study
- * ally open, tapping an invite link only changes the hash — the browser
+ * Lockin open, tapping an invite link only changes the hash — the browser
  * reuses the tab and never reloads, so a load-only handler would sit there
  * doing nothing while both of you wondered why it wasn't connecting.
  */
@@ -1230,28 +1228,28 @@ function initTogether() {
 /* ============================== HANDS-FREE ============================== */
 let lastWeather = null;
 const SAY_LIST = [
-  ['Ally, start 45 minutes', 'begins a focus session'],
-  ['Ally, pause / resume', 'holds the clock and picks it up again'],
-  ['Ally, add five minutes', 'extends the session'],
-  ['Ally, finish', 'ends the session and opens the autopsy'],
-  ['Ally, take a five minute break', 'starts a break'],
-  ['Ally, I got distracted by my phone', 'logs the distraction'],
-  ['Ally, play rain / stop the music', 'controls the focus sound'],
-  ['Ally, louder / quieter', 'nudges the volume'],
-  ['Ally, I have 35 minutes', 'shapes the time into blocks and starts'],
-  ['Ally, plan 40 minutes at 8pm', 'schedules a session for later'],
-  ['Ally, how long left', 'reads out the time remaining'],
-  ['Ally, how am I doing', 'reads out focus, tab leaves, distractions'],
-  ['Ally, what is my streak / level', 'reads out your progress'],
-  ['Ally, read me the quote', 'reads today’s quote aloud'],
-  ['Ally, what is the weather', 'reads the current conditions'],
-  ['Ally, set my goal to 90 minutes', 'changes the daily target'],
-  ['Ally, set my city to Chennai', 'sets the weather location'],
-  ['Ally, create a room', 'starts a co-study room and copies the link'],
-  ['Ally, nudge', 'pokes your study partner'],
-  ['Ally, show insights / journal / plan', 'switches view'],
-  ['Ally, it was good', 'answers the mood question after a session'],
-  ['Ally, stop listening', 'turns hands-free off']
+  ['Lockin, start 45 minutes', 'begins a focus session'],
+  ['Lockin, pause / resume', 'holds the clock and picks it up again'],
+  ['Lockin, add five minutes', 'extends the session'],
+  ['Lockin, finish', 'ends the session and opens the autopsy'],
+  ['Lockin, take a five minute break', 'starts a break'],
+  ['Lockin, I got distracted by my phone', 'logs the distraction'],
+  ['Lockin, play rain / stop the music', 'controls the focus sound'],
+  ['Lockin, louder / quieter', 'nudges the volume'],
+  ['Lockin, I have 35 minutes', 'shapes the time into blocks and starts'],
+  ['Lockin, plan 40 minutes at 8pm', 'schedules a session for later'],
+  ['Lockin, how long left', 'reads out the time remaining'],
+  ['Lockin, how am I doing', 'reads out focus, tab leaves, distractions'],
+  ['Lockin, what is my streak / level', 'reads out your progress'],
+  ['Lockin, read me the quote', 'reads today’s quote aloud'],
+  ['Lockin, what is the weather', 'reads the current conditions'],
+  ['Lockin, set my goal to 90 minutes', 'changes the daily target'],
+  ['Lockin, set my city to Chennai', 'sets the weather location'],
+  ['Lockin, create a room', 'starts a co-study room and copies the link'],
+  ['Lockin, nudge', 'pokes your study partner'],
+  ['Lockin, show insights / journal / plan', 'switches view'],
+  ['Lockin, it was good', 'answers the mood question after a session'],
+  ['Lockin, stop listening', 'turns hands-free off']
 ];
 
 function vbDid(msg, cls) {
@@ -1264,12 +1262,14 @@ function voiceSay(text, opts) { vbDid(text); VoiceControl.say(text, opts); }
 
 function voiceOn() {
   if (!VoiceControl.supported) {
-    toast('This browser has no speech recognition. Chrome or Edge can do it — the typed command box works everywhere.');
+    /* Stated where the button is, not thrown across the screen. */
+    $('#voice-blurb').textContent = 'Speech recognition needs Chrome or Edge. The typed command box below works everywhere.';
+    openDrawer();
     return;
   }
   Store.set('handsFree', true);
   VoiceControl.start();
-  voiceSay('Hands-free is on. Say: Ally, start 25 minutes.');
+  vbDid('Listening. Say: Lockin, start 25 minutes.');   // no pop-up, no announcement
 }
 function voiceOff() {
   Store.set('handsFree', false);
@@ -1309,7 +1309,7 @@ function renderVoice(st) {
 /* --------------------------- the command desk --------------------------- */
 function handleIntent(p) {
   if (!p.intent) {
-    if (p.woke) voiceSay('I didn’t catch a command. Say: Ally, help.');
+    if (p.woke) voiceSay('I didn’t catch a command. Say: Lockin, help.');
     return;
   }
   const SOUNDS = { rain: 'rain', waves: 'waves', ocean: 'waves', 'café': 'cafe', cafe: 'cafe',
@@ -1458,7 +1458,7 @@ function handleIntent(p) {
     case 'ask.weather':
       voiceSay(lastWeather
         ? `${lastWeather.label}, ${lastWeather.temp} degrees in ${lastWeather.place}.`
-        : 'No location set. Say: Ally, set my city to, then the name.');
+        : 'No location set. Say: Lockin, set my city to, then the name.');
       break;
 
     case 'goal': {
@@ -1538,7 +1538,7 @@ function wireVoice() {
     $('#voice-type').value = '';
     $('#vb-heard').textContent = v;
     const parsed = VoiceControl.simulate(v);
-    if (!parsed || !parsed.intent) toast('I don’t know that one. Open “What can I say?” for the list.');
+    if (!parsed || !parsed.intent) vbDid('I don’t know that one — see “What can I say?”', 'no');
   };
   $('#voice-type').addEventListener('keydown', e => { if (e.key === 'Enter') $('#voice-run').click(); });
 
@@ -1548,9 +1548,9 @@ function wireVoice() {
     onHeard: (text, final) => { $('#vb-heard').textContent = text || 'Listening…'; },
     onError: kind => {
       voiceOff();
-      toast(kind === 'mic-blocked'
+      $('#voice-blurb').textContent = kind === 'mic-blocked'
         ? 'Microphone access was blocked. Allow it in the address bar, then turn hands-free on again.'
-        : 'No microphone found.');
+        : 'No microphone found.';
     }
   });
 
@@ -1777,7 +1777,8 @@ function restoreActive() {
   A = saved;
   A.lastAt = Date.now();        // time with the page closed isn't counted either way
   A.paused = true;
-  banner({ text: `Session restored — ${fmtDur(A.focusedMs)} focused so far. It's paused; resume when you're ready.`, kind: 'info' });
+  zenOff = true;                // reopening the app shouldn't hide the whole interface
+  /* No pop-up: the dial already reads "paused — the clock is waiting". */
 }
 
 function init() {
@@ -1806,23 +1807,16 @@ function init() {
   applyTimeMode();
   if (st.place) refreshWeather();
 
-  const streak = Store.streak();
-  if (streak.comebackOffer) {
-    banner({ kind: 'info',
-      text: `Welcome back. You haven't studied for ${streak.gap} days. Complete just 15 minutes today to earn a Comeback Badge.`,
-      actions: [{ label: 'Start 15 min', fn: () => startFocus(15, 'focus') }] });
-  } else if (streak.current >= 2 && !streak.studiedToday) {
-    banner({ kind: 'info', timeout: 12000,
-      text: `${streak.current}-day streak on the line. A session today keeps it alive.` });
-  }
+  /* Streak and comeback nudges live on the Insights tab, not in the user's
+     face the moment the app opens. */
 
   setTimeout(hidePreloader, 2100);   // long enough to actually read the tagline
 
   setInterval(tick, 250);
   setInterval(checkReminders, 10000);
+  setTimeout(checkReminders, QUIET_MS + 500);      // catch anything the quiet period swallowed
   setInterval(() => { renderChips(); applyTimeMode(); }, 60000);
   setInterval(() => { if (Store.state.settings.place) refreshWeather(); }, 15 * 60000);
-  checkReminders();
 
   window.addEventListener('beforeunload', e => {
     if (A && !A.paused) { e.preventDefault(); e.returnValue = ''; }

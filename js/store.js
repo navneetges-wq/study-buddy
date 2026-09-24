@@ -1,12 +1,12 @@
 /* ------------------------------------------------------------------
-   store.js — everything ally remembers, plus the maths it does
+   store.js — everything Lockin remembers, plus the maths it does
    with those memories. All persistence is localStorage.
 -------------------------------------------------------------------*/
 const Store = (function () {
-  const KEY = 'ally.v1';
-  const ACTIVE_KEY = 'ally.active';
-  const OLD_KEY = 'studybuddy.v1';          // the app used to be called Study Buddy
-  const OLD_ACTIVE = 'studybuddy.active';
+  const KEY = 'lockin.v1';
+  const ACTIVE_KEY = 'lockin.active';
+  /* The app has been renamed twice; carry old saves forward either way. */
+  const LEGACY = [['ally.v1', 'ally.active'], ['studybuddy.v1', 'studybuddy.active']];
 
   const defaults = () => ({
     version: 1,
@@ -37,11 +37,16 @@ const Store = (function () {
     const base = defaults();
     try {
       /* One-time migration so nobody loses their history to a rename. */
-      if (!localStorage.getItem(KEY) && localStorage.getItem(OLD_KEY)) {
-        localStorage.setItem(KEY, localStorage.getItem(OLD_KEY));
-        const a = localStorage.getItem(OLD_ACTIVE);
-        if (a) localStorage.setItem(ACTIVE_KEY, a);
-        localStorage.removeItem(OLD_KEY); localStorage.removeItem(OLD_ACTIVE);
+      if (!localStorage.getItem(KEY)) {
+        for (const [oldKey, oldActive] of LEGACY) {
+          const found = localStorage.getItem(oldKey);
+          if (!found) continue;
+          localStorage.setItem(KEY, found);
+          const a = localStorage.getItem(oldActive);
+          if (a) localStorage.setItem(ACTIVE_KEY, a);
+          localStorage.removeItem(oldKey); localStorage.removeItem(oldActive);
+          break;
+        }
       }
       const raw = localStorage.getItem(KEY);
       if (!raw) return base;

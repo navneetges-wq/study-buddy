@@ -223,7 +223,7 @@ const Notify = (function () {
   }
   function push(title, body) {
     if (!supported || Notification.permission !== 'granted') return false;
-    try { new Notification(title, { body, icon: undefined, tag: 'ally' }); return true; }
+    try { new Notification(title, { body, icon: undefined, tag: 'lockin' }); return true; }
     catch (e) { return false; }
   }
   return { supported, state, ask, push };

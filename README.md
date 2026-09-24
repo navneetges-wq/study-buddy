@@ -1,10 +1,10 @@
-# ally
+# Lockin
 
 **Your partner in deep work.**
 
 **Live app: https://navneetges-wq.github.io/study-buddy/**
 
-You don't tell ally *what* you're working on. It learns *how* you work — when you're
+You don't tell Lockin *what* you're working on. It learns *how* you work — when you're
 sharpest, how long you last before you drift, what pulls you away, and how often you come back.
 
 Plain HTML, CSS and JavaScript. No frameworks, no build step, no backend.
@@ -67,7 +67,7 @@ regardless, so the duel still settles.
 Minimalist on purpose. One accent colour, flat surfaces, hairline borders, a single centred
 column so nothing can fall out of alignment, and no decorative icons competing with the timer.
 
-A preloader states the name and the promise — *ally · Your partner in deep work.* — then gets
+A preloader states the name and the promise — *Lockin · Your partner in deep work.* — then gets
 out of the way after two seconds.
 
 The moment a session starts, the app enters **full-screen focus**: the header, tabs, quote and
@@ -78,7 +78,7 @@ drawer instead of cluttering the screen you stare at while working.
 
 ## Hands-free
 
-It is the most distinctive thing ally does, so it is not buried in a menu. There is a mic
+It is the most distinctive thing Lockin does, so it is not buried in a menu. There is a mic
 button in the header that is styled unlike every other chip, a prompt above the timer until
 you have discovered it, a control in the focus-card tray, and the `M` key. The listening bar
 stays on screen during full-screen focus — that is precisely when you do not want to reach for
@@ -89,19 +89,19 @@ Turn on hands-free and the whole app answers to your voice. One click to allow t
 microphone — no browser lets a page open the mic without it — and after that nothing needs
 touching. The permission is remembered per origin, so on your next visit it arms itself.
 
-    "Ally, start 45 minutes"        "Ally, how long left"
-    "Ally, pause"                   "Ally, how am I doing"
-    "Ally, add five minutes"        "Ally, what is my streak"
-    "Ally, I got distracted by my phone"
-    "Ally, play rain"               "Ally, create a room"
-    "Ally, I have 35 minutes"       "Ally, show insights"
+    "Lockin, start 45 minutes"        "Lockin, how long left"
+    "Lockin, pause"                   "Lockin, how am I doing"
+    "Lockin, add five minutes"        "Lockin, what is my streak"
+    "Lockin, I got distracted by my phone"
+    "Lockin, play rain"               "Lockin, create a room"
+    "Lockin, I have 35 minutes"       "Lockin, show insights"
 
 22 commands in all, listed inside the app under *What can I say?*. Questions are answered out
 loud, so you can keep your eyes on the book.
 
 When a session ends, hands-free reads the autopsy back to you, starts the 60-second reflection
 by itself, and waits for your mood — *"it was good"* — then files the whole thing. From
-"Ally, start 45 minutes" to a saved session with a spoken journal, nothing is clicked.
+"Lockin, start 45 minutes" to a saved session with a spoken journal, nothing is clicked.
 
 A wake word is required by default so that reading aloud, a lecture in the background or a
 conversation can't fire commands by accident. You can switch it off for bare commands.
@@ -120,6 +120,24 @@ conversation can't fire commands by accident. You can switch it off for bare com
   every command is usable in any browser, with or without a mic.
 - The app talks back with speech synthesis. If that fails — no voices installed, muted device —
   the command still runs; only the spoken reply is lost.
+
+### Getting the voice right
+
+Speech recognition is confidently wrong in predictable ways, so the parser expects that rather
+than demanding a clean transcript:
+
+- Chrome is asked for **five** guesses per phrase, and the first one that means something wins.
+  Its top guess is frequently not its best.
+- Common mishearings are repaired before matching: *paws/pose* → pause, *finnish* → finish,
+  *star/stat* → start, *brake* → break, *ad five* → add five, *low fi* → lo-fi.
+- Spoken numbers become digits, including compounds — "forty five" → 45.
+- Filler words are stripped, and if a stray word survives at the front ("so then start 25
+  minutes") the parser shaves words off and retries.
+- A long spoken reply no longer deafens the app; the ignore-window is capped at six seconds and
+  clears the moment speaking actually stops.
+
+Turning hands-free on is silent — no pop-up and no announcement. The bar just says it is
+listening.
 
 ## What it does
 

@@ -180,6 +180,7 @@ body.focus-mode .topbar,
 body.focus-mode .tabs,
 body.focus-mode .quoteline,
 body.focus-mode .quickstrip,
+body.focus-mode .voice-promo,
 body.focus-mode .foot{display:none !important}
 body.focus-mode{padding-bottom:0}
 body.focus-mode main{max-width:none;padding:0}
