@@ -159,7 +159,7 @@ listening.
 - **Reminders** — an in-app banner plus a browser notification when a planned session is due.
 - **Focus Fingerprint** — average session, best study period, when focus usually drops, your
   most common distraction, most productive day. Appears after 3 sessions.
-- **Focus sounds** — rain, waves, café, night, lo-fi, white and brown noise, all generated
+- **Focus sounds** — lo-fi (the default), rain, waves, café, night, white and brown noise, all generated
   live with the Web Audio API (nothing to download).
 - **"I have X minutes"** — type 35, get Focus 25 → Break 5 → Focus 5, ready to run.
 - **"Just start"** — a 5, 10 or 15 minute commitment, and an offer to continue when it ends.

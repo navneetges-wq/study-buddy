@@ -17,7 +17,8 @@ const Store = (function () {
       dailyGoalMin: 60,
       lastDurationMin: 25,
       breakMin: 5,
-      ambience: 'rain',
+      ambience: 'lofi',
+      soundChosen: false,    // false = still on the default, so a new default applies
       volume: 0.5,
       autoAmbience: true,
       reminderLeadMin: 5,
@@ -51,9 +52,15 @@ const Store = (function () {
       const raw = localStorage.getItem(KEY);
       if (!raw) return base;
       const saved = JSON.parse(raw);
+      const merged = { ...base.settings, ...(saved.settings || {}) };
+      /* Anyone who never picked a sound follows the current default, rather
+         than being stuck with whatever the default was on the day they
+         first opened the app. */
+      if (!merged.soundChosen) merged.ambience = base.settings.ambience;
+
       return {
         ...base, ...saved,
-        settings: { ...base.settings, ...(saved.settings || {}) },
+        settings: merged,
         progress: { ...base.progress, ...(saved.progress || {}),
                     achievements: (saved.progress && saved.progress.achievements) || {} },
         days: saved.days || {},

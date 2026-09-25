@@ -1379,8 +1379,9 @@ function handleIntent(p) {
       break;
 
     case 'sound': {
-      const key = SOUNDS[p.which] || 'rain';
-      Store.set('ambience', key); Ambience.play(key); paintSound();
+      const key = SOUNDS[p.which] || 'lofi';
+      Store.set('ambience', key); Store.set('soundChosen', true);
+      Ambience.play(key); paintSound();
       voiceSay(`Playing ${key === 'lofi' ? 'lo-fi' : key}.`);
       break;
     }
@@ -1633,6 +1634,7 @@ function wire() {
   $('#sounds').addEventListener('click', e => {
     const b = e.target.closest('.schip'); if (!b) return;
     Store.set('ambience', b.dataset.s);
+    Store.set('soundChosen', true);          // your pick now outranks the default
     Ambience.play(b.dataset.s);
     paintSound();
   });
