@@ -18,9 +18,42 @@ const VoiceControl = (function () {
   let hooks = {};
   let requireWake = true;
 
-  /* Recognition mangles short names constantly, so accept what Chrome
-     actually returns for "Lockin": lock in, locking, log in, lock-in. */
-  const WAKE = /^\s*(?:hey\s+|ok(?:ay)?\s+)?(?:lock\s?-?\s?in|lockin|locking|lockedin|locked in|log\s?in|loggin|lock|ally|buddy)\b[\s,]*/i;
+  /* A fixed list of spellings never keeps up with what recognition actually
+     returns — it gave us "locket" and the whole command was dropped. Judge
+     the first word by shape instead. */
+  function editDistance(a, b) {
+    const m = a.length, n = b.length;
+    let prev = Array.from({ length: n + 1 }, (_, j) => j);
+    for (let i = 1; i <= m; i++) {
+      const cur = [i];
+      for (let j = 1; j <= n; j++) {
+        cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      }
+      prev = cur;
+    }
+    return prev[n];
+  }
+
+  function wakeish(word) {
+    const t = String(word || '').replace(/[^a-z]/g, '');
+    if (!t) return false;
+    if (/^(lock|lok|loc|log|look)/.test(t)) return true;       // locket, lockin, locking, loggin, lookin
+    if (t === 'ally' || t === 'buddy') return true;            // the old names still answer
+    return editDistance(t, 'lockin') <= 2;                     // nockin, lakin, lockim…
+  }
+
+  /** Pulls the wake word off the front, however it was transcribed. */
+  function stripWake(text) {
+    const t = text.replace(/^(?:hey|ok|okay)\s+/, '');
+    const w = t.split(' ');
+    if (!w.length) return { woke: false, rest: text };
+    if (wakeish(w[0])) {
+      // "lock in", "look in", "log in" — two words for one name
+      const two = w.length > 1 && /^(in|inn|it|him|and)$/.test(w[1]);
+      return { woke: true, rest: w.slice(two ? 2 : 1).join(' ').trim() };
+    }
+    return { woke: false, rest: text };
+  }
 
   /* ------------------------------ grammar ------------------------------ */
   /* Order matters: the first rule that matches wins, so put the specific
@@ -159,12 +192,10 @@ const VoiceControl = (function () {
   /** Turns a spoken phrase into an intent, or null when nothing fits. */
   function parse(raw) {
     if (!raw) return null;
-    let text = normalise(raw);
-    const woke = WAKE.test(text);
-    if (woke) text = text.replace(WAKE, '').trim();
-    if (requireWake && !woke) return { intent: null, woke: false, text };
-    text = text.replace(FILLERS, ' ').replace(/\s+/g, ' ').trim();
-    if (!text) return { intent: 'wake', woke: true, text };
+    const stripped = stripWake(normalise(raw));
+    const woke = stripped.woke;
+    let text = stripped.rest.replace(FILLERS, ' ').replace(/\s+/g, ' ').trim();
+    if (!text) return woke ? { intent: 'wake', woke: true, text } : { intent: null, woke, text };
 
     let hit = match(text);
     /* Anchored rules fail when a stray word survives at the front
@@ -176,7 +207,9 @@ const VoiceControl = (function () {
       rest = rest.slice(cut + 1);
       hit = match(rest);
     }
-    if (hit) return { ...hit, woke, text };
+    /* Strict mode decides whether to ACT, not whether to understand. Knowing
+       the phrase was a real command lets the bar say something useful. */
+    if (hit) return { ...hit, woke, text, gated: requireWake && !woke };
     return { intent: null, woke, text, unmatched: true };
   }
 
@@ -270,6 +303,10 @@ const VoiceControl = (function () {
       const parsed = parseBest(candidates);
       if (!parsed) return;
       if (!parsed.intent && !parsed.woke) return;               // background chatter, ignore
+      if (parsed.gated) {                                       // understood, but strict mode is on
+        hooks.onGated && hooks.onGated(parsed);
+        return;
+      }
       hooks.onIntent && hooks.onIntent(parsed);
     };
 
@@ -348,13 +385,13 @@ const VoiceControl = (function () {
 
   function init(h) {
     hooks = h || {};
-    requireWake = Store.state.settings.wakeWord !== false;
+    requireWake = Store.state.settings.wakeWord === true;   // off unless asked for
   }
   const setWake = v => { requireWake = !!v; Store.set('wakeWord', !!v); hooks.onState && hooks.onState(state()); };
 
   /** Run a command as if it had been spoken — used by the typed fallback box. */
   function simulate(text) {
-    const parsed = parse(requireWake && !WAKE.test(text) ? 'lockin ' + text : text);
+    const parsed = parse(stripWake(normalise(text)).woke ? text : 'lockin ' + text);
     if (parsed) hooks.onIntent && hooks.onIntent(parsed);
     return parsed;
   }

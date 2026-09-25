@@ -1303,13 +1303,17 @@ function renderVoice(st) {
   $('#voice-toggle').textContent = st.on ? 'Turn off hands-free' : 'Turn on hands-free';
   $('#quick-voice-state').textContent = st.on ? 'on' : 'off';
   $('#wake-toggle').checked = st.requireWake;
+  $('#wake-toggle').checked = st.requireWake;
   if (st.dictating) $('#vb-heard').textContent = 'Recording your reflection — say “done” when you finish.';
 }
 
 /* --------------------------- the command desk --------------------------- */
 function handleIntent(p) {
   if (!p.intent) {
-    if (p.woke) voiceSay('I didn’t catch a command. Say: Lockin, help.');
+    if (p.woke) {
+      vbDid(p.text ? `No command in “${p.text}” — say “help” for the list.` : 'Listening.', 'no');
+      VoiceControl.say(p.text ? 'I didn’t catch a command.' : 'Listening.');
+    }
     return;
   }
   const SOUNDS = { rain: 'rain', waves: 'waves', ocean: 'waves', 'café': 'cafe', cafe: 'cafe',
@@ -1546,6 +1550,7 @@ function wireVoice() {
     onIntent: handleIntent,
     onState: renderVoice,
     onHeard: (text, final) => { $('#vb-heard').textContent = text || 'Listening…'; },
+    onGated: p => vbDid(`Heard “${p.text}” — say “Lockin” first, or turn strict mode off in Settings.`, 'no'),
     onError: kind => {
       voiceOff();
       $('#voice-blurb').textContent = kind === 'mic-blocked'

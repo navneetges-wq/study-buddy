@@ -135,6 +135,13 @@ than demanding a clean transcript:
   minutes") the parser shaves words off and retries.
 - A long spoken reply no longer deafens the app; the ignore-window is capped at six seconds and
   clears the moment speaking actually stops.
+- **The wake word is off by default.** Just say "start 45 minutes". A fixed list of spellings
+  could never keep up with what recognition returns — it produced "locket" and the command was
+  dropped — so the first word is judged by shape instead: anything starting lock/log/look, or
+  within two edits of "lockin", counts. Ordinary conversation is still ignored, because the
+  command grammar is what filters, not the wake word.
+- Strict mode is still available for noisy rooms, and when it blocks a command it says so
+  instead of silently doing nothing.
 
 Turning hands-free on is silent — no pop-up and no announcement. The bar just says it is
 listening.
