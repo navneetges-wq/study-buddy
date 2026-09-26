@@ -1,0 +1,183 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<title>Lockin — visual identity</title>
+<style>
+:root{--bg:#0b0d11;--surface:#12151b;--surface2:#171b22;--line:rgba(255,255,255,.07);
+--line2:rgba(255,255,255,.14);--text:#e8eaf0;--dim:#8a919f;--faint:#5d636f;--accent:#7c8cff;
+--good:#5ec9a0;--bad:#e07b7b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.65 ui-sans-serif,system-ui,
+-apple-system,"Segoe UI",Inter,Roboto,sans-serif;-webkit-font-smoothing:antialiased;padding:52px 40px 80px}
+.wrap{max-width:980px;margin:0 auto}
+.hero{display:flex;flex-direction:column;gap:20px;padding-bottom:40px;border-bottom:1px solid var(--line);margin-bottom:44px}
+.hero img{height:96px;width:auto}
+.hero p{color:var(--dim);font-size:15px;margin:0;max-width:66ch}
+h2{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);
+margin:44px 0 16px;padding-bottom:9px;border-bottom:1px solid var(--line)}
+h3{font-size:15px;font-weight:600;letter-spacing:-.01em;margin:0 0 5px}
+p.n{color:var(--dim);font-size:13.5px;margin:0 0 18px;max-width:72ch}
+.grid{display:flex;gap:16px;flex-wrap:wrap}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:26px;
+display:flex;flex-direction:column;align-items:center;gap:14px;flex:1;min-width:210px}
+.tile.lite{background:#f4f5f8;border-color:#e2e5ec}
+.tile.wht{background:#7c8cff;border-color:#7c8cff}
+.cap{color:var(--faint);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase}
+.tile.lite .cap{color:#7b818f}.tile.wht .cap{color:rgba(255,255,255,.75)}
+.sizes{display:flex;align-items:flex-end;gap:30px;flex-wrap:wrap}
+.sz{display:flex;flex-direction:column;align-items:center;gap:9px}
+.modes{display:flex;gap:14px;flex-wrap:wrap}
+.mode{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;
+display:flex;flex-direction:column;align-items:center;gap:10px;min-width:104px}
+.sw{display:flex;gap:12px;flex-wrap:wrap}
+.swatch{border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:158px;flex:1}
+.chip{height:62px}.swatch .meta{padding:11px 13px;background:var(--surface)}
+.swatch b{display:block;font-size:13px;font-weight:600}
+.swatch code{color:var(--faint);font-size:11.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.clear{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:34px;display:grid;place-items:center}
+.cbox{border:1.5px dashed rgba(124,140,255,.5);padding:38px;display:grid;place-items:center}
+.cbox img{height:76px;display:block}
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.rule{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+.rule h4{margin:0 0 10px;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.rule.do h4{color:var(--good)}.rule.dont h4{color:var(--bad)}
+.rule ul{margin:0;padding-left:18px;color:var(--dim);font-size:13.5px}
+.rule li{margin-bottom:6px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;color:var(--faint);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;
+font-weight:500;padding:0 12px 9px 0;border-bottom:1px solid var(--line)}
+td{padding:10px 12px 10px 0;border-bottom:1px solid var(--line);color:var(--dim);vertical-align:top}
+td code{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+img{display:block}
+@media(max-width:700px){.rules{grid-template-columns:1fr}}
+</style></head><body><div class="wrap">
+
+<div class="hero">
+  <img src="svg/lockin-lockup-dark.svg" alt="LOCKIN">
+  <p><b style="color:var(--text)">Your partner in deep work.</b> — A focus ring left open, with the
+  accent dot as the piece that closes it, set against LOCKIN in Eczar Bold. Everything runs heavy.</p>
+</div>
+
+<h2>The idea</h2>
+<p class="n">Lockin had two brand fragments doing nothing in particular: a plain ring as the favicon,
+and a 10px accent dot in the header. The mark makes them one statement — the ring is the session,
+open and unfinished, and the dot is what completes it.</p>
+<p class="n">The gap isn't eyeballed. It's solved from the dot outward, wide enough to clear both
+round caps, the dot itself, and a set margin of air either side; change the dot and the gap
+re-solves. The dot stays wider than the stroke deliberately — that's what stops it reading as the
+head of a loading spinner and makes it read as a separate piece dropping into place.</p>
+<p class="n">The ring's stroke is 28% of its own diameter, tuned up from a lighter first cut so it
+carries the same weight as Eczar's bold stems instead of looking thin beside them.</p>
+
+<h2>Typography</h2>
+<p class="n">LOCKIN is set in <b style="color:var(--text)">Eczar Bold</b> (weight 700, version 2.000)
+— a high-contrast display face by <b style="color:var(--text)">Vaibhav Singh</b> at Rosetta Type
+Foundry, licensed under the SIL Open Font License. Caps, tracked out 40/1000 em so the heavy serifs
+get air.</p>
+<p class="n">In the logo files the letters are <b style="color:var(--text)">converted to outlines</b>,
+so the artwork never depends on the font being installed. The font itself ships in
+<code style="color:var(--text)">fonts/</code> with its licence, and is installed to your
+<code style="color:var(--text)">~/Library/Fonts</code> for setting new headlines in Photoshop.</p>
+<div class="tile" style="align-items:flex-start;padding:30px 32px">
+  <img src="png/lockin-lockup-light-800.png" style="height:0;width:0;opacity:0">
+  <img src="svg/lockin-lockup-dark.svg" style="height:62px">
+</div>
+
+<h2>Primary lockup</h2>
+<p class="n">The mark sits to the left of the wordmark at 1.16× cap height, with a gap of 0.30× cap
+height. Use this wherever there's horizontal room — site header, README, flyer, banner.</p>
+<div class="grid">
+  <div class="tile"><img src="svg/lockin-lockup-dark.svg" style="height:46px"><span class="cap">on dark · primary</span></div>
+  <div class="tile lite"><img src="svg/lockin-lockup-light.svg" style="height:46px"><span class="cap">on light</span></div>
+</div>
+<div class="grid" style="margin-top:16px">
+  <div class="tile wht"><img src="svg/lockin-lockup-white.svg" style="height:46px"><span class="cap">one-colour reverse</span></div>
+  <div class="tile lite"><img src="svg/lockin-lockup-black.svg" style="height:46px"><span class="cap">one-colour · print</span></div>
+</div>
+
+<h2>Alternative lockup — the mark as the O</h2>
+<p class="n">The mark drops into the word and becomes the letter, which removes the two-circle
+repetition of the primary lockup. Tighter and more distinctive, but it needs size to stay legible —
+don't take it below 150px wide.</p>
+<div class="grid">
+  <div class="tile"><img src="svg/lockin-lockup-o-dark.svg" style="height:50px"><span class="cap">on dark</span></div>
+  <div class="tile lite"><img src="svg/lockin-lockup-o-light.svg" style="height:50px"><span class="cap">on light</span></div>
+</div>
+
+<h2>The mark</h2>
+<p class="n">The mark alone, for app icons, favicons, avatars and anywhere square. Below 48px it
+switches to the favicon cut — stroke up to 34% of diameter, tighter margins — so the ring and the
+dot stay distinct instead of blurring together.</p>
+<div class="tile" style="align-items:flex-start">
+  <div class="sizes">
+    <div class="sz"><img src="svg/lockin-icon.svg" style="height:112px"><span class="cap">112</span></div>
+    <div class="sz"><img src="svg/lockin-icon.svg" style="height:64px"><span class="cap">64</span></div>
+    <div class="sz"><img src="svg/lockin-favicon.svg" style="height:80px"><span class="cap">favicon cut</span></div>
+    <div class="sz"><img src="png/lockin-icon-32.png" style="height:32px"><span class="cap">32</span></div>
+    <div class="sz"><img src="png/lockin-icon-16.png" style="height:16px"><span class="cap">16</span></div>
+  </div>
+</div>
+
+<h2>Focus-mode accents</h2>
+<p class="n">Lockin already re-tints <code style="color:var(--text)">--accent</code> when the weather
+shifts the room — rain, night, clear, snow, cloud. The dot follows it. It's the only part of the
+brand that changes colour, and only ever to an accent the app is already using.</p>
+<div class="modes">
+  <div class="mode"><img src="svg/lockin-icon.svg" style="height:44px"><span class="cap">default</span></div>
+  <div class="mode"><img src="svg/lockin-icon-mode-rain.svg" style="height:44px"><span class="cap">rain</span></div>
+  <div class="mode"><img src="svg/lockin-icon-mode-night.svg" style="height:44px"><span class="cap">night</span></div>
+  <div class="mode"><img src="svg/lockin-icon-mode-clear.svg" style="height:44px"><span class="cap">clear</span></div>
+  <div class="mode"><img src="svg/lockin-icon-mode-snow.svg" style="height:44px"><span class="cap">snow</span></div>
+  <div class="mode"><img src="svg/lockin-icon-mode-cloud.svg" style="height:44px"><span class="cap">cloud</span></div>
+</div>
+
+<h2>Clear space &amp; minimum size</h2>
+<p class="n">Keep free space on all four sides equal to <b style="color:var(--text)">the diameter of
+the dot</b>. Minimum sizes: primary lockup <b style="color:var(--text)">120px</b> wide, O lockup
+<b style="color:var(--text)">150px</b>, mark <b style="color:var(--text)">16px</b> using the favicon
+cut.</p>
+<div class="clear"><div class="cbox"><img src="svg/lockin-lockup-dark.svg"></div></div>
+
+<h2>Colour</h2>
+<div class="sw">
+  <div class="swatch"><div class="chip" style="background:#7c8cff"></div>
+    <div class="meta"><b>Accent — the dot</b><code>#7C8CFF</code></div></div>
+  <div class="swatch"><div class="chip" style="background:#e8eaf0"></div>
+    <div class="meta"><b>Ink on dark</b><code>#E8EAF0</code></div></div>
+  <div class="swatch"><div class="chip" style="background:#12151b;border-bottom:1px solid var(--line)"></div>
+    <div class="meta"><b>Ink on light</b><code>#12151B</code></div></div>
+  <div class="swatch"><div class="chip" style="background:#0b0d11;border-bottom:1px solid var(--line)"></div>
+    <div class="meta"><b>Canvas</b><code>#0B0D11</code></div></div>
+</div>
+
+<h2>Do &amp; don't</h2>
+<div class="rules">
+  <div class="rule do"><h4>Do</h4><ul>
+    <li>Place the supplied SVG — the letters are already outlined, so it needs no font</li>
+    <li>Use the favicon cut below 48px, not a scaled-down primary mark</li>
+    <li>Switch to the one-colour versions on photos or coloured fields</li>
+    <li>Set new headlines in Eczar Bold to match — it's installed</li>
+  </ul></div>
+  <div class="rule dont"><h4>Don't</h4><ul>
+    <li>Re-type the wordmark in a lighter weight of Eczar, or another face</li>
+    <li>Rotate the gap off 12 o'clock — that's where the timer starts</li>
+    <li>Animate the dot around the ring; that turns the logo into a spinner</li>
+    <li>Thin the ring — its weight is matched to Eczar's stems on purpose</li>
+    <li>Stretch, squash, rotate, or add shadows and gradients</li>
+  </ul></div>
+</div>
+
+<h2>Files</h2>
+<table>
+  <tr><th>File</th><th>Format</th><th>Use</th></tr>
+  <tr><td><code>lockin-lockup-dark.svg</code></td><td>vector</td><td><b>Primary</b> — mark + LOCKIN, dark</td></tr>
+  <tr><td><code>lockin-lockup-light.svg</code></td><td>vector</td><td>Primary, light backgrounds</td></tr>
+  <tr><td><code>lockin-lockup-white/black.svg</code></td><td>vector</td><td>One-colour reverse and print</td></tr>
+  <tr><td><code>lockin-lockup-o-*.svg</code></td><td>vector</td><td>Alternative lockup, mark as the O</td></tr>
+  <tr><td><code>lockin-icon.svg</code></td><td>vector</td><td>App icon / square mark</td></tr>
+  <tr><td><code>lockin-favicon.svg</code></td><td>vector</td><td>Heavier cut for 16–48px</td></tr>
+  <tr><td><code>lockin-*-mode-*.svg</code></td><td>vector</td><td>Focus-mode accent variants</td></tr>
+  <tr><td><code>png/lockin-icon-{16…1024}.png</code></td><td>raster, alpha</td><td>Favicons, app icons</td></tr>
+  <tr><td><code>png/lockin-lockup-*-{800,2400}.png</code></td><td>raster, alpha</td><td>Slides, flyer, banner</td></tr>
+  <tr><td><code>fonts/Eczar-Bold.ttf</code>, <code>OFL.txt</code></td><td>font</td><td>Eczar Bold + its licence</td></tr>
+</table>
+
+</div></body></html>

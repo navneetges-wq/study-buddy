@@ -1,0 +1,7 @@
+# compiled encoder and any stray frame output — rebuild with:
+#   swiftc -O -o mkvideo mkvideo.swift
+mkvideo
+muxav
+score.wav
+score-ad.wav
+frames/

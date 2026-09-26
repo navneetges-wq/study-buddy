@@ -1,0 +1,3 @@
+# CMYK masters are ~33 MB each and fully regenerable: python3 render.py
+# They stay on disk for printing and submission; they just don't belong in git.
+*.tiff

@@ -25,6 +25,7 @@ const Store = (function () {
       place: null          // {name, lat, lon}
     },
     quote: null,           // {date, text, author}
+    word: null,            // {date, word, part, definition, …} — word of the day
     lastOpenedDay: null,
     progress: { xp: 0, achievements: {} },
     friends: {},           // name key -> head-to-head record

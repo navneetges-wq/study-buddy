@@ -244,11 +244,14 @@ document.addEventListener('visibilitychange', () => {
 });
 
 /* ============================== RENDERING ============================== */
-let zenOff = false;                    // the user chose to leave full-screen focus
+/* Focus is where the app opens and where it returns to. `zenOff` means the
+   user minimised it to get at the rest of the app. */
+let zenOff = false;
 function syncZen() {
-  if (A || brk) document.body.classList.toggle('focus-mode', !zenOff);
+  document.body.classList.toggle('focus-mode', !zenOff);
+  document.body.classList.toggle('idle-focus', !zenOff && !A && !brk);
 }
-function leaveZen() { zenOff = false; document.body.classList.remove('focus-mode'); }
+function leaveZen() { zenOff = false; syncZen(); }
 
 function renderTimer() {
   const state = $('#focus-state'), sub = $('#dial-sub'), time = $('#dial-time');
@@ -571,6 +574,7 @@ async function refreshWeather(place) {
   try {
     const w = await Weather.current(p.lat, p.lon);
     lastWeather = { ...w, place: p.name };
+    renderGreeting();
     document.documentElement.dataset.mode = w.mood;
     $('#chip-weather').textContent = `${w.temp}° ${p.name}`;
     $('#chip-weather').title = `${w.label} — ${w.mood === 'night' ? 'Night Focus Mode' : w.rainy ? 'Rainy Focus Mode' : 'Focus Mode'}`;
@@ -1048,10 +1052,9 @@ function wireShell() {
   $('#close-settings').onclick = closeDrawer;
   $('#drawer-back').onclick = closeDrawer;
 
-  $('#focus-expand').onclick = () => {
-    if (A || brk) { zenOff = !zenOff; syncZen(); }
-    else document.body.classList.toggle('focus-mode');
-  };
+  /* Focus is the default view now, so minimising is simply zenOff — toggling
+     the class alone would be undone by the next render tick. */
+  $('#focus-expand').onclick = () => { zenOff = !zenOff; syncZen(); };
 
   $('#quick-sound').onclick = () => {
     if (Ambience.playing) Ambience.stop(); else Ambience.play(Store.state.settings.ambience);
@@ -1071,7 +1074,7 @@ function wireShell() {
     }
     if (e.key !== 'Escape') return;
     if (!$('#drawer').hidden) closeDrawer();
-    else if (document.body.classList.contains('focus-mode')) { zenOff = true; syncZen(); document.body.classList.remove('focus-mode'); }
+    else if (!zenOff) { zenOff = true; syncZen(); }
   });
 }
 
@@ -1223,6 +1226,41 @@ function initTogether() {
   handleHash();
   window.addEventListener('hashchange', handleHash);
   setInterval(roomTick, 1000);
+}
+
+/* ============================ GREETING & WORD ============================ */
+function renderGreeting() {
+  /* Open-Meteo is asked with timezone=auto, so its hour is the hour in the
+     place the user set — not on this device, which may be elsewhere. */
+  const hour = (lastWeather && typeof lastWeather.localHour === 'number')
+    ? lastWeather.localHour : new Date().getHours();
+  const city = lastWeather && lastWeather.place ? lastWeather.place.split(',')[0] : '';
+  const where = city ? ` in ${city}` : '';
+
+  let line;
+  if (hour >= 5 && hour <= 11)       line = `Happy morning${where} — and an energetic start.`;
+  else if (hour >= 12 && hour <= 16) line = `Good afternoon${where} — keep the momentum.`;
+  else if (hour >= 17 && hour <= 20) line = `Good evening${where} — time for a deep stretch.`;
+  else                               line = `Late night${where} — one clean block, then rest.`;
+  $('#greeting').textContent = line;
+}
+
+function paintWord(w) {
+  $('#wotd-word').textContent = w.word;
+  $('#wotd-part').textContent = w.part ? ' · ' + w.part : '';
+  $('#wotd-def').textContent = w.definition;
+  $('#wotd').hidden = false;
+}
+
+async function loadWord(force) {
+  /* Every word ships with its own gloss, so show it at once rather than
+     leaving a gap on the landing while a dictionary answers — then upgrade
+     in place with the fetched definition. */
+  const cached = Store.state.word;
+  if (cached && cached.date === Store.dayKey() && !force) { paintWord(cached); return; }
+  const [word, part, gloss] = Words.pick();
+  paintWord({ word, part, definition: gloss });
+  try { paintWord(await Words.today(force)); } catch (e) { /* the gloss already stands */ }
 }
 
 /* ============================== HANDS-FREE ============================== */
@@ -1571,6 +1609,7 @@ function wireVoice() {
 
 /* ================================ VIEWS ================================ */
 function switchView(name) {
+  if (name !== 'today') { zenOff = true; syncZen(); }   // those views live outside focus
   $$('.tab').forEach(t => t.classList.toggle('is-active', t.dataset.view === name));
   $$('.view').forEach(v => v.classList.toggle('is-active', v.id === 'view-' + name));
   if (name === 'insights') renderInsights();
@@ -1784,7 +1823,6 @@ function restoreActive() {
   A = saved;
   A.lastAt = Date.now();        // time with the page closed isn't counted either way
   A.paused = true;
-  zenOff = true;                // reopening the app shouldn't hide the whole interface
   /* No pop-up: the dial already reads "paused — the clock is waiting". */
 }
 
@@ -1811,6 +1849,10 @@ function init() {
   initTogether();
   renderAll();
   loadQuote(false);
+  renderGreeting();
+  loadWord(false);
+  setInterval(renderGreeting, 5 * 60000);
+  syncZen();                       // open in focus
   applyTimeMode();
   if (st.place) refreshWeather();
 

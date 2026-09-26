@@ -442,3 +442,36 @@ body.focus-mode .voicebar:not([hidden]){display:flex !important;bottom:64px}
 /* the voice bar floats above everything, so reserve room beneath the content */
 body.focus-mode.voice-on .focus-card{padding-bottom:150px}
 body.focus-mode.voice-on .tray{bottom:98px}
+
+/* ===================== landing: logo, greeting, word ===================== */
+.focus-brand{display:none}
+.focus-logo{height:30px;width:152px;display:block;margin:0 auto;color:var(--text)}
+.greeting{margin:14px 0 0;color:var(--dim);font-size:14.5px;text-align:center}
+
+body.focus-mode .focus-brand{display:block;margin-bottom:34px}
+body.focus-mode #focus-title{display:none}          /* the logo is the title here */
+
+.wotd{margin-top:22px;padding-top:18px;border-top:1px solid var(--line);max-width:460px}
+.wotd-word{margin:8px 0 3px;font-size:17px}
+.wotd-word b{font-weight:600;letter-spacing:-.01em}
+.wotd-word i{font-style:normal;color:var(--faint);font-size:13px;font-weight:400}
+.wotd-def{margin:0;color:var(--dim);font-size:13.5px;line-height:1.55}
+
+body.focus-mode .wotd{margin-left:auto;margin-right:auto;text-align:center;border-top:0;
+  border-top:1px solid var(--line);padding-top:20px;margin-top:30px}
+body.focus-mode:not(.idle-focus) .wotd{display:none}   /* not while the clock runs */
+
+/* the idle landing breathes more than a running session does */
+body.idle-focus .focus-card{padding-top:56px}
+body.idle-focus .dial-wrap{width:min(268px,46vw,36vh);height:min(268px,46vw,36vh)}
+
+/* with the title hidden, the status pill must still sit on the right */
+body.focus-mode .card-head{justify-content:flex-end}
+/* the landing has to fit one screen: logo, greeting, dial, controls, word */
+body.focus-mode .focus-brand{margin-bottom:20px}
+body.focus-mode .greeting{margin-top:12px}
+body.idle-focus .focus-card{padding-top:44px;padding-bottom:40px}
+body.idle-focus .dial-wrap{width:min(234px,42vw,30vh);height:min(234px,42vw,30vh)}
+body.idle-focus .focus-body{gap:18px}
+body.focus-mode .wotd{margin-top:20px;padding-top:16px}
+body.idle-focus .focus-logo{height:28px;width:142px}

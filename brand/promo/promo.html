@@ -1,0 +1,77 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Lockin — promo</title>
+<style>
+  html,body{margin:0;background:#07080b;color:#8a919f;
+    font:13px ui-sans-serif,system-ui,sans-serif}
+  #stage{display:grid;place-items:center;min-height:100vh}
+  canvas{max-width:96vw;max-height:88vh;display:block;box-shadow:0 30px 90px #000}
+  #bar{position:fixed;left:0;right:0;bottom:0;padding:10px 16px;background:#0b0d11e0;
+    display:flex;gap:14px;align-items:center;backdrop-filter:blur(8px)}
+  input[type=range]{flex:1;accent-color:#7c8cff}
+  button{background:#7c8cff;border:0;color:#0a0c11;font-weight:700;border-radius:8px;
+    padding:7px 16px;cursor:pointer}
+  #sheet{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:6px}
+  #sheet figure{margin:0;position:relative}
+  #sheet canvas{width:100%;max-width:none;max-height:none;box-shadow:none}
+  #sheet figcaption{position:absolute;left:6px;top:6px;background:#000a;padding:2px 7px;
+    border-radius:4px;color:#e8eaf0;font:11px ui-monospace,monospace}
+</style></head><body>
+<div id="stage"></div>
+<script src="promo.js"></script>
+<script>
+const q = new URLSearchParams(location.search);
+const mk = (w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
+
+async function fonts(){
+  const f = new FontFace('Eczar', 'url(Eczar-Bold.ttf)', {weight:'700'});
+  await f.load(); document.fonts.add(f); await document.fonts.ready;
+}
+
+(async ()=>{
+  await fonts();
+  const stage = document.getElementById('stage');
+
+  if (q.has('sheet')) {                         // contact sheet for review
+    stage.id='sheet';
+    const TS=[1.6,3.4,5.0,6.9,9.0,11.5,14.2,16.9,19.6,21.9,25.3,28.7];
+    for(const t of TS){
+      const c=mk(W,H); drawFrame(c.getContext('2d'),t);
+      const f=document.createElement('figure');
+      const cap=document.createElement('figcaption'); cap.textContent=t.toFixed(1)+'s';
+      f.append(c,cap); stage.append(f);
+    }
+    document.title='READY'; return;
+  }
+
+  const c = mk(W,H), ctx = c.getContext('2d');
+  stage.append(c);
+
+  if (q.has('t')) { drawFrame(ctx, parseFloat(q.get('t'))); document.title='READY'; return; }
+
+  if (q.has('export')) {                        // render every frame, post it back
+    const total = DUR*FPS;
+    for(let i=0;i<total;i++){
+      drawFrame(ctx, i/FPS);
+      const blob = await new Promise(r=>c.toBlob(r,'image/jpeg',0.94));
+      await fetch('/frame/'+i,{method:'POST',body:blob});
+      document.title = 'EXPORT '+(i+1)+'/'+total;
+    }
+    document.title='DONE'; return;
+  }
+
+  const bar=document.createElement('div'); bar.id='bar';
+  bar.innerHTML='<button id=pp>Play</button><input type=range id=sk min=0 max='+DUR+
+                ' step=0.01 value=0><span id=tc>0.00s</span>';
+  document.body.append(bar);
+  const sk=bar.querySelector('#sk'), tc=bar.querySelector('#tc'), pp=bar.querySelector('#pp');
+  let playing=false, t0=0, base=0;
+  const paint=t=>{drawFrame(ctx,t); sk.value=t; tc.textContent=t.toFixed(2)+'s';};
+  pp.onclick=()=>{playing=!playing; pp.textContent=playing?'Pause':'Play';
+    t0=performance.now(); base=parseFloat(sk.value); if(playing) loop();};
+  sk.oninput=()=>{playing=false; pp.textContent='Play'; paint(parseFloat(sk.value));};
+  function loop(){ if(!playing) return;
+    let t=base+(performance.now()-t0)/1000; if(t>=DUR){t=0;base=0;t0=performance.now();}
+    paint(t); requestAnimationFrame(loop);
+  }
+  paint(0);
+})();
+</script></body></html>

@@ -81,6 +81,11 @@
   </div>
 
   <div class="card focus-card" id="focus-card">
+    <div class="focus-brand">
+      <svg class="focus-logo" role="img" aria-label="Lockin"><use href="#lockin-lockup"/></svg>
+      <p class="greeting" id="greeting"></p>
+    </div>
+
     <div class="card-head">
       <h2 id="focus-title">Focus session</h2>
       <div class="head-right">
@@ -157,6 +162,12 @@
     </div>
 
     <div class="queue" id="queue-row" hidden></div>
+
+    <div class="wotd" id="wotd" hidden>
+      <span class="k">Word of the day</span>
+      <p class="wotd-word"><b id="wotd-word"></b><i id="wotd-part"></i></p>
+      <p class="wotd-def" id="wotd-def"></p>
+    </div>
 
     <div class="tray">
       <button class="tray-btn" id="quick-sound">Sound <span id="quick-sound-name">off</span></button>
@@ -351,10 +362,6 @@
 
 </main>
 
-<footer class="foot">
-  Everything stays in this browser. Quotes from DummyJSON · Weather from Open-Meteo.
-</footer>
-
 <!-- ============================ SETTINGS DRAWER ============================ -->
 <div class="drawer-back" id="drawer-back" hidden></div>
 <aside class="drawer" id="drawer" hidden aria-label="Settings">
@@ -421,6 +428,8 @@
     <h3>Your data</h3>
     <p class="muted">Sessions, plans, reflections and settings live in this browser only.</p>
     <button class="btn small danger-ghost" id="wipe">Erase everything</button>
+    <p class="muted credits">Quotes from DummyJSON · Weather from Open-Meteo ·
+      Definitions from DictionaryAPI, falling back to Wiktionary.</p>
   </section>
 </aside>
 

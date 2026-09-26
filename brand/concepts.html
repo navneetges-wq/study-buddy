@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Lockin — logo concepts</title>
+<style>
+:root{--bg:#0b0d11;--surface:#12151b;--line:rgba(255,255,255,.07);--text:#e8eaf0;
+--dim:#8a919f;--faint:#5d636f;--accent:#7c8cff;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+font:15px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif;
+-webkit-font-smoothing:antialiased;padding:40px 38px 60px}
+.wrap{max-width:1030px;margin:0 auto}
+h1{font-size:25px;font-weight:600;letter-spacing:-.035em;margin:0}
+.sub{color:var(--faint);font-size:13px;margin:4px 0 34px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px 26px;margin-bottom:16px}
+.card.now{border-style:dashed;opacity:.7}
+.hd{display:flex;align-items:baseline;gap:11px;margin-bottom:3px}
+.num{color:var(--accent);font-size:11px;letter-spacing:.09em;text-transform:uppercase}
+.nm{font-size:17.5px;font-weight:600;letter-spacing:-.025em}
+.why{color:var(--dim);font-size:13.5px;margin:0 0 20px;max-width:74ch}
+.row{display:flex;align-items:center;gap:30px;flex-wrap:wrap}
+.cell{display:flex;flex-direction:column;align-items:center;gap:8px}
+.lbl{color:var(--faint);font-size:10px;letter-spacing:.07em;text-transform:uppercase}
+.lite{background:#f4f5f8;border-radius:12px;padding:13px;display:grid;place-items:center;color:#12151b}
+.sep{width:1px;align-self:stretch;background:var(--line)}
+.lock{display:flex;align-items:center;gap:11px}
+.wm{font-size:19px;font-weight:600;letter-spacing:-.03em;line-height:1.15}
+.tg{display:block;color:var(--faint);font-size:12px;font-weight:400;letter-spacing:0}
+.bar{border:1px solid var(--line);border-radius:10px;padding:13px 17px;background:#0e1117}
+svg{display:block}
+</style></head><body><div class="wrap">
+<h1>Lockin — logo directions</h1>
+<p class="sub">Four concepts · each at 112px, 40px, 20px (favicon), inverted on light, and in the real header lockup</p>
+
+<div class="card now">
+  <div class="hd"><span class="num">Today</span><span class="nm">What you have now</span></div>
+  <p class="why">A 10px accent dot in the header and a plain ring as the favicon. There isn't really a mark yet.</p>
+  <div class="row">
+    <div class="cell"><svg width="112" height="112" viewBox="0 0 100 100"><circle cx="50" cy="50" r="34" fill="none" stroke="#7c8cff" stroke-width="9"/></svg><span class="lbl">favicon today</span></div>
+    <div class="sep"></div>
+    <div class="cell"><div class="bar"><div class="lock"><span style="width:10px;height:10px;border-radius:50%;background:var(--accent);display:block"></span><span class="wm">Lockin<span class="tg">Your partner in deep work.</span></span></div></div><span class="lbl">header today</span></div>
+  </div>
+</div>
+
+<div id="out"></div>
+</div>
+
+<script>
+const MARKS = [
+  { n:"Keyhole",
+    why:"The lock lives <em>inside</em> the dial instead of beside it. The ring is the focus timer you already draw on screen; the keyhole is cut out of it in accent. Reads as one solid object rather than an icon sitting on another icon.",
+    svg:`<circle cx="32" cy="32" r="22" stroke-width="5.5"/>
+         <circle cx="32" cy="27" r="5.2" fill="#7c8cff" stroke="none"/>
+         <path d="M29.8 29.5 L27.9 42 h8.2 L34.2 29.5 Z" fill="#7c8cff" stroke="none"/>` },
+  { n:"Locked In",
+    why:"Your two existing brand elements finally doing one job: the ring opens, and the dot is the piece that closes it. Nothing to decode, nothing decorative — the most native to “minimalist on purpose”, and the one that survives 16px best.",
+    svg:`<path d="M41.53 13.29 A21 21 0 1 1 22.47 13.29" stroke-width="6"/>
+         <circle cx="32" cy="13.29" r="4.6" fill="#7c8cff" stroke="none"/>` },
+  { n:"Reticle",
+    why:"No lock pun at all — this one is about attention. Four brackets closing on a single point: locking <em>on</em> rather than locking up. Feels like instrumentation, which suits an app that measures how you work.",
+    svg:`<path d="M12 24 V18 A6 6 0 0 1 18 12 H24" stroke-width="5"/>
+         <path d="M40 12 H46 A6 6 0 0 1 52 18 V24" stroke-width="5"/>
+         <path d="M52 40 V46 A6 6 0 0 1 46 52 H40" stroke-width="5"/>
+         <path d="M24 52 H18 A6 6 0 0 1 12 46 V40" stroke-width="5"/>
+         <circle cx="32" cy="32" r="5.5" fill="#7c8cff" stroke="none"/>` },
+  { n:"Latch",
+    why:"The literal one. A padlock drawn in the app's own card geometry — the same rounded-rect language as every surface in the UI — with the keyhole as an accent slot. Least ambiguous, least distinctive.",
+    svg:`<path d="M23 26.5 V20.5 a9 9 0 0 1 18 0 V26.5" stroke-width="5"/>
+         <rect x="14" y="26.5" width="36" height="26" rx="8" stroke-width="5"/>
+         <path d="M32 36 V43" stroke-width="4.5" stroke="#7c8cff"/>` },
+];
+const mk = (s,sz)=>`<svg width="${sz}" height="${sz}" viewBox="0 0 64 64" fill="none"
+  stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">${s}</svg>`;
+document.getElementById('out').innerHTML = MARKS.map((m,i)=>`
+<div class="card">
+  <div class="hd"><span class="num">Concept 0${i+1}</span><span class="nm">${m.n}</span></div>
+  <p class="why">${m.why}</p>
+  <div class="row">
+    <div class="cell">${mk(m.svg,112)}<span class="lbl">112 px</span></div>
+    <div class="cell">${mk(m.svg,40)}<span class="lbl">40</span></div>
+    <div class="cell">${mk(m.svg,20)}<span class="lbl">20</span></div>
+    <div class="cell"><div class="lite">${mk(m.svg,72)}</div><span class="lbl">on light</span></div>
+    <div class="sep"></div>
+    <div class="cell"><div class="bar"><div class="lock">${mk(m.svg,30)}
+      <span class="wm">Lockin<span class="tg">Your partner in deep work.</span></span></div></div>
+      <span class="lbl">header lockup</span></div>
+  </div>
+</div>`).join('');
+</script></body></html>

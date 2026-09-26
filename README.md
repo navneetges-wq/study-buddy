@@ -15,7 +15,7 @@ Plain HTML, CSS and JavaScript. No frameworks, no build step, no backend.
 
 | Requirement | Where it lives in the app |
 |---|---|
-| **Gets something from the internet** | Daily quote from the DummyJSON Quotes API, and live conditions from the Open-Meteo weather + geocoding APIs (drives Rainy Focus Mode / Night Focus Mode) |
+| **Gets something from the internet** | Daily quote from the DummyJSON Quotes API, a word of the day from DictionaryAPI (falling back to Wiktionary), and live conditions from the Open-Meteo weather + geocoding APIs, which drive both the focus-mode palette and the greeting |
 | **Remembers something** | Every session, plan, reflection, mood, streak and setting is kept in `localStorage` and survives refresh — an in-flight session is even restored after an accidental reload |
 | **Does something because time has passed** | The focus timer and break timer, scheduled-session reminders that fire when their time arrives, shared rooms that start
 themselves when the clock reaches the time in the link, missed-plan expiry, countdown to your daily goal, day-by-day streaks and the 60-second voice-journal window |
