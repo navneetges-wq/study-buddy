@@ -44,13 +44,8 @@ button,input,textarea{font:inherit;color:inherit}
 }
 .preloader.done{opacity:0;visibility:hidden}
 .pre-inner{text-align:center}
-.pre-ring{
-  width:44px;height:44px;margin:0 auto;border-radius:50%;
-  border:2px solid rgba(255,255,255,.08);border-top-color:var(--accent);
-  animation:spin 1s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-.pre-mark{font-size:46px;font-weight:600;letter-spacing:-.04em;margin:22px 0 4px;animation:rise .6s ease both .05s}
+.pre-mark{margin:0 0 10px;animation:rise .6s ease both .05s}
+.pre-mark svg{height:52px;width:auto;display:block;margin:0 auto}
 .pre-tag{color:var(--dim);font-size:14px;margin:0;animation:rise .6s ease both .25s}
 @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
@@ -59,10 +54,10 @@ button,input,textarea{font:inherit;color:inherit}
   max-width:880px;margin:0 auto;padding:30px 22px 6px;
   display:flex;gap:18px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;
 }
-.brand{display:flex;gap:11px;align-items:center}
-.brand-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);flex:none}
-.topbar h1{font-size:19px;letter-spacing:-.03em}
-.tagline{margin:1px 0 0;color:var(--faint);font-size:12px}
+.brand{display:block}
+.brand-logo{margin:0;line-height:0}
+.brand-logo svg{height:26px;width:auto;display:block}
+.tagline{margin:6px 0 0;color:var(--faint);font-size:12px}
 .chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .chip{
   background:none;border:1px solid var(--line);border-radius:8px;
