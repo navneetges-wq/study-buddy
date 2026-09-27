@@ -482,3 +482,20 @@ body.focus-mode .setup{text-align:center}
   align-items:center;gap:5px}
 .tray-out:hover{opacity:1;color:var(--accent);background:rgba(255,255,255,.04)}
 .tray-out .out{font-size:10px;opacity:.8}
+
+/* ---- first run: point at the way out of full-screen focus ---- */
+.expand-label{display:none;font-size:12px;margin-right:6px;vertical-align:middle}
+body.hint-expand .expand-label{display:inline}
+body.hint-expand #focus-expand{
+  color:var(--accent);
+  background:var(--accent-soft);
+  border:1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  animation:hint-pulse 2.4s ease-in-out infinite;
+}
+@keyframes hint-pulse{
+  0%,100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--accent) 38%, transparent)}
+  60%{box-shadow:0 0 0 8px color-mix(in srgb, var(--accent) 0%, transparent)}
+}
+@media(prefers-reduced-motion:reduce){
+  body.hint-expand #focus-expand{animation:none}
+}

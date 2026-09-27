@@ -128,6 +128,7 @@ function startFocus(minutes, kind, planId) {
   }
   if (planId) Store.setPlanned(planId, { status: 'started' });
   zenOff = false;                      // every new session opens in full-screen focus
+  dismissExpandHint();                 // they got started; stop pointing at the icon
   renderTimer(); renderPlanLists();
 }
 
@@ -251,10 +252,24 @@ document.addEventListener('visibilitychange', () => {
    user minimised it to get at the rest of the app. */
 let zenOff = false;
 function syncZen() {
+  renderExpandHint();
   document.body.classList.toggle('focus-mode', !zenOff);
   document.body.classList.toggle('idle-focus', !zenOff && !A && !brk);
 }
 function leaveZen() { zenOff = false; syncZen(); }
+
+/* The landing is full-screen focus, so the way back to the rest of the app
+   is one small icon. Point at it until the user has either used it or
+   started a session — then never again. */
+function renderExpandHint() {
+  const show = !Store.state.settings.expandSeen && !A && !brk && !zenOff;
+  document.body.classList.toggle('hint-expand', show);
+}
+function dismissExpandHint() {
+  if (Store.state.settings.expandSeen) return;
+  Store.set('expandSeen', true);
+  renderExpandHint();
+}
 
 function renderTimer() {
   const state = $('#focus-state'), sub = $('#dial-sub'), time = $('#dial-time');
@@ -1058,7 +1073,7 @@ function wireShell() {
 
   /* Focus is the default view now, so minimising is simply zenOff — toggling
      the class alone would be undone by the next render tick. */
-  $('#focus-expand').onclick = () => { zenOff = !zenOff; syncZen(); };
+  $('#focus-expand').onclick = () => { dismissExpandHint(); zenOff = !zenOff; syncZen(); };
 
   $('#quick-sound').onclick = () => {
     if (Ambience.playing) Ambience.stop(); else Ambience.play(Store.state.settings.ambience);
