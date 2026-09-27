@@ -1320,9 +1320,6 @@ function voiceOff() {
 }
 
 function renderVoice(st) {
-  const bar = $('#voicebar');
-  if (!bar) return;
-
   /* Hands-free is the app's signature, so it gets three homes: a button in
      the header, a prompt on Today until it's discovered, and the tray on
      the focus card (the one that survives full-screen focus). */
@@ -1337,16 +1334,11 @@ function renderVoice(st) {
   if (promo) promo.hidden = st.on || !st.supported || Store.state.settings.promoHidden === true;
   $('#quick-voice').classList.toggle('on', st.on);
 
-  bar.hidden = !st.on;
-  bar.className = 'voicebar' + (st.listening ? ' live' : '') + (st.dictating ? ' dictating' : '');
-  document.body.classList.toggle('voice-on', st.on);     // keep the bar off the footer
   $('#voice-pill').textContent = !st.supported ? 'Not supported here'
     : st.dictating ? 'Recording' : st.on ? (st.listening ? 'Listening' : 'Starting…') : 'Off';
   $('#voice-toggle').textContent = st.on ? 'Turn off hands-free' : 'Turn on hands-free';
   $('#quick-voice-state').textContent = st.on ? 'on' : 'off';
   $('#wake-toggle').checked = st.requireWake;
-  $('#wake-toggle').checked = st.requireWake;
-  if (st.dictating) $('#vb-heard').textContent = 'Recording your reflection — say “done” when you finish.';
 }
 
 /* --------------------------- the command desk --------------------------- */
@@ -1577,13 +1569,11 @@ function wireVoice() {
     .map(([say, does]) => `<div class="cmd"><b>“${esc(say)}”</b><span>${esc(does)}</span></div>`).join('');
 
   $('#voice-toggle').onclick = () => VoiceControl.on ? voiceOff() : voiceOn();
-  $('#voice-off').onclick = voiceOff;
   $('#wake-toggle').onchange = e => VoiceControl.setWake(e.target.checked);
   $('#voice-run').onclick = () => {
     const v = $('#voice-type').value.trim();
     if (!v) return;
     $('#voice-type').value = '';
-    $('#vb-heard').textContent = v;
     const parsed = VoiceControl.simulate(v);
     if (!parsed || !parsed.intent) vbDid('I don’t know that one — see “What can I say?”', 'no');
   };
@@ -1592,7 +1582,6 @@ function wireVoice() {
   VoiceControl.init({
     onIntent: handleIntent,
     onState: renderVoice,
-    onHeard: (text, final) => { $('#vb-heard').textContent = text || 'Listening…'; },
     onGated: p => vbDid(`Heard “${p.text}” — say “Lockin” first, or turn strict mode off in Settings.`, 'no'),
     onError: kind => {
       voiceOff();
