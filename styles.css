@@ -176,7 +176,7 @@ body.focus-mode .tabs,
 body.focus-mode .quoteline,
 body.focus-mode .quickstrip,
 body.focus-mode .voice-promo,
-body.focus-mode .foot{display:none !important}
+body.focus-mode .sitefoot{display:none !important}
 body.focus-mode{padding-bottom:0}
 body.focus-mode main{max-width:none;padding:0}
 body.focus-mode .focus-card{
@@ -368,7 +368,6 @@ body.focus-mode .tray{position:absolute;bottom:20px;left:0;right:0;border-top:0;
 .next-suggest{color:var(--dim);font-size:13px;flex:1;min-width:180px}
 
 
-.foot{max-width:880px;margin:30px auto 0;padding:0 22px;color:var(--faint);font-size:12px}
 
 @keyframes nudge-flash{0%,100%{background-color:transparent}30%{background-color:var(--accent-soft)}}
 body.nudged{animation:nudge-flash .55s 2}
