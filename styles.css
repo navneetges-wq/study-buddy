@@ -499,3 +499,9 @@ body.focus-mode .setup,
 body.focus-mode .live,
 body.focus-mode .partner-stats{justify-content:center}
 body.focus-mode .setup{text-align:center}
+
+/* the nav is hidden in focus mode, so Discord needs a home on the landing */
+.tray-out{color:var(--accent);opacity:.75;text-decoration:none;display:inline-flex;
+  align-items:center;gap:5px}
+.tray-out:hover{opacity:1;color:var(--accent);background:rgba(255,255,255,.04)}
+.tray-out .out{font-size:10px;opacity:.8}

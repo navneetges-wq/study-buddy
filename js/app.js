@@ -9,6 +9,9 @@ const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const CIRC = 540.35;                    // 2πr for the progress dial (r = 86)
 const MIN = 60000;
 
+// The app can't find you a second person for a duel. The server can.
+const DISCORD_URL = 'https://discord.gg/kxqSxHcb';
+
 const DISTRACTIONS = {
   tab:      { emoji: '', label: 'Left the tab' },
   phone:    { emoji: '', label: 'Phone' },
@@ -877,7 +880,8 @@ function renderRivals() {
         <span class="sub">${f.duels} duel${f.duels === 1 ? '' : 's'} · ${fmtShort(f.together)} studied side by side</span>
       </div>
       <div class="wl"><span class="w">${f.wins}</span><i>W</i> <span class="l">${f.losses}</span><i>L</i> ${f.draws}<i>D</i></div>
-    </div>`).join('') : `<p class="empty">No rivals yet. Create a room, send the link, and the first duel writes itself here.</p>`;
+    </div>`).join('') : `<p class="empty">No rivals yet. Create a room, send the link, and the first duel writes itself here.<br>
+      Nobody to send it to? <a class="dlink" href="${DISCORD_URL}" target="_blank" rel="noopener">Find someone in the Lockin Discord</a> — someone's usually studying.</p>`;
 
   const d = Store.state.duels.slice().reverse().slice(0, 10);
   $('#duel-list').innerHTML = d.length ? d.map(x => `
@@ -1630,7 +1634,7 @@ function paintSound() {
 /* ================================= WIRING ================================= */
 function wire() {
   $('#tabs').addEventListener('click', e => {
-    const t = e.target.closest('.tab'); if (t) switchView(t.dataset.view);
+    const t = e.target.closest('.tab'); if (t && t.dataset.view) switchView(t.dataset.view);
   });
 
   /* duration presets */
