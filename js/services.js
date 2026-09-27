@@ -4,43 +4,95 @@
 -------------------------------------------------------------------*/
 
 /* ============================ QUOTES ============================ */
+/**
+ * Motivational only — about starting, effort, discipline and not stopping.
+ *
+ * This used to pull a random quote from a general-purpose quotes API, which
+ * is why the app once greeted people with "Luxury must be comfortable" and a
+ * story about beating Tarzan. Filtering that pool was tried and abandoned:
+ * out of 420 sampled quotes a strict filter passed 4.5%, and half of those
+ * were still philosophy rather than motivation. No keyless, CORS-enabled,
+ * motivation-tagged API was reachable to replace it, so the set is curated.
+ */
 const Quotes = (function () {
-  const fallback = [
-    { text: "It always seems impossible until it's done.", author: 'Nelson Mandela' },
-    { text: 'The secret of getting ahead is getting started.', author: 'Mark Twain' },
-    { text: 'Small daily improvements are the key to staggering long-term results.', author: 'Robin Sharma' },
-    { text: 'You do not rise to the level of your goals, you fall to the level of your systems.', author: 'James Clear' },
-    { text: 'Concentration is the secret of strength.', author: 'Ralph Waldo Emerson' },
-    { text: 'Amateurs sit and wait for inspiration. The rest of us just get up and go to work.', author: 'Stephen King' },
-    { text: 'Nothing will work unless you do.', author: 'Maya Angelou' },
-    { text: 'Study without desire spoils the memory, and it retains nothing that it takes in.', author: 'Leonardo da Vinci' }
+  const POOL = [
+    ["It always seems impossible until it's done.", 'Nelson Mandela'],
+    ['The way to get started is to quit talking and begin doing.', 'Walt Disney'],
+    ['You do not rise to the level of your goals. You fall to the level of your systems.', 'James Clear'],
+    ['Amateurs sit and wait for inspiration. The rest of us just get up and go to work.', 'Stephen King'],
+    ['Nothing will work unless you do.', 'Maya Angelou'],
+    ['Success is the sum of small efforts repeated day in and day out.', 'Robert Collier'],
+    ['Concentration is the secret of strength.', 'Ralph Waldo Emerson'],
+    ['Well done is better than well said.', 'Benjamin Franklin'],
+    ['Energy and persistence conquer all things.', 'Benjamin Franklin'],
+    ['Do the hard jobs first. The easy jobs will take care of themselves.', 'Dale Carnegie'],
+    ['Little by little, one travels far.', 'Spanish proverb'],
+    ['Fall seven times, stand up eight.', 'Japanese proverb'],
+    ['It does not matter how slowly you go as long as you do not stop.', 'Confucius'],
+    ['Action is the foundational key to all success.', 'Pablo Picasso'],
+    ['Either you run the day or the day runs you.', 'Jim Rohn'],
+    ["Don't wish it were easier. Wish you were better.", 'Jim Rohn'],
+    ['Discipline is the bridge between goals and accomplishment.', 'Jim Rohn'],
+    ['Start where you are. Use what you have. Do what you can.', 'Arthur Ashe'],
+    ['The best way out is always through.', 'Robert Frost'],
+    ['Motivation gets you going. Habit keeps you going.', 'Jim Ryun'],
+    ['Perseverance is not a long race; it is many short races one after the other.', 'Walter Elliot'],
+    ['The expert in anything was once a beginner.', 'Helen Hayes'],
+    ['We are what we repeatedly do. Excellence, then, is not an act but a habit.', 'Will Durant'],
+    ['Done is better than perfect.', 'Sheryl Sandberg'],
+    ["If you can't fly then run. If you can't run then walk. But keep moving forward.", 'Martin Luther King Jr.'],
+    ["Hard work beats talent when talent doesn't work hard.", 'Tim Notke'],
+    ["You don't have to be great to start, but you have to start to be great.", 'Zig Ziglar'],
+    ['There is no substitute for hard work.', 'Thomas Edison'],
+    ['Genius is one percent inspiration and ninety-nine percent perspiration.', 'Thomas Edison'],
+    ['Our greatest weakness lies in giving up.', 'Thomas Edison'],
+    ['A year from now you may wish you had started today.', 'Karen Lamb'],
+    ['The future depends on what you do today.', 'Mahatma Gandhi'],
+    ['Focus on being productive instead of busy.', 'Tim Ferriss'],
+    ['What we fear doing most is usually what we most need to do.', 'Tim Ferriss'],
+    ["You miss 100% of the shots you don't take.", 'Wayne Gretzky'],
+    ['Small daily improvements are the key to staggering long-term results.', 'Robin Sharma'],
+    ["Believe you can and you're halfway there.", 'Theodore Roosevelt'],
+    ["Whether you think you can or you think you can't, you're right.", 'Henry Ford'],
+    ['Nothing is particularly hard if you divide it into small jobs.', 'Henry Ford'],
+    ["You can't build a reputation on what you are going to do.", 'Henry Ford'],
+    ["Don't watch the clock; do what it does. Keep going.", 'Sam Levenson'],
+    ['The only limit to our realization of tomorrow is our doubts of today.', 'Franklin D. Roosevelt'],
+    ['Great things are done by a series of small things brought together.', 'Vincent van Gogh'],
+    ['Success is not final, failure is not fatal: it is the courage to continue that counts.', 'Winston Churchill'],
+    ["If you're going through hell, keep going.", 'Winston Churchill'],
+    ['Setting goals is the first step in turning the invisible into the visible.', 'Tony Robbins'],
+    ['The difference between ordinary and extraordinary is that little extra.', 'Jimmy Johnson'],
+    ["It's not that I'm so smart, it's just that I stay with problems longer.", 'Albert Einstein'],
+    ["Opportunities don't happen. You create them.", 'Chris Grosser'],
+    ['Deep work is the ability to focus without distraction on a demanding task.', 'Cal Newport'],
+    ['Persistence guarantees that results are inevitable.', 'Paramahansa Yogananda'],
+    ['Work gives you meaning and purpose, and life is empty without it.', 'Stephen Hawking'],
+    ['If all you can do is crawl, start crawling.', 'Rumi'],
+    ['Whoever knocks persistently ends by entering.', 'Rumi'],
+    ['No one starts out on top. You have to work your way up.', 'Muhammad Ali']
   ];
 
-  async function fetchRemote() {
-    const res = await fetch('https://dummyjson.com/quotes/random', { cache: 'no-store' });
-    if (!res.ok) throw new Error('quote http ' + res.status);
-    const j = await res.json();
-    if (!j.quote) throw new Error('unexpected quote shape');
-    return { text: j.quote, author: j.author || 'Unknown' };
-  }
+  const toQuote = ([text, author]) => ({ text, author });
 
-  /** Today's quote, cached for the day. force=true always fetches a new one. */
+  /** One a day, the same for everyone, cycling through the whole set. */
+  const forToday = () => toQuote(POOL[Math.floor(Date.now() / 86400000) % POOL.length]);
+
   async function today(force = false) {
     const st = Store.state;
     const key = Store.dayKey();
     if (!force && st.quote && st.quote.date === key) return { ...st.quote, cached: true };
-    try {
-      const q = await fetchRemote();
-      st.quote = { ...q, date: key }; Store.save();
-      return q;
-    } catch (e) {
-      console.warn('Quote API unavailable, using the built-in shelf.', e);
-      const q = fallback[Math.floor(Math.random() * fallback.length)];
-      if (!st.quote || st.quote.date !== key) { st.quote = { ...q, date: key }; Store.save(); }
-      return { ...q, offline: true };
+
+    let q = forToday();
+    if (force) {                                  // the refresh button wants a different one
+      const others = POOL.filter(p => p[0] !== (st.quote && st.quote.text));
+      q = toQuote(others[Math.floor(Math.random() * others.length)]);
     }
+    st.quote = { ...q, date: key }; Store.save();
+    return q;
   }
-  return { today };
+
+  return { today, count: POOL.length };
 })();
 
 /* ============================ WEATHER ============================ */
