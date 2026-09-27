@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lockin — the business work</title>
+<meta name="description" content="Who Lockin is for, the three launch jobs I ran, what I skipped, and why it's free.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M48.3 16.97 A22 22 0 1 1 15.7 16.97' fill='none' stroke='%23e8eaf0' stroke-width='15' stroke-linecap='round'/><circle cx='32' cy='9.75' r='7' fill='%237c8cff' stroke='none'/></svg>">
+<meta name="theme-color" content="#0b0d11">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#0b0d11; --surface:#12151b; --sunk:#0e1116;
+    --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.16);
+    --text:#e8eaf0; --dim:#8a919f; --faint:#5d636f;
+    --accent:#7c8cff; --accent-soft:rgba(124,140,255,.11);
+    --good:#5ec9a0; --warn:#e0b563;
+    --serif:"Fraunces",Georgia,serif;
+    --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+    --measure:68ch;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);
+       font-size:16.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1020px;margin:0 auto;padding:0 24px 110px}
+  .prose{max-width:var(--measure)}
+  p{margin:0 0 1em}p:last-child{margin-bottom:0}
+  strong{font-weight:600;color:var(--text)}
+  a{color:var(--accent);text-underline-offset:2px;text-decoration-thickness:1px}
+  a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
+  code{font-family:var(--mono);font-size:.86em;background:var(--sunk);border:1px solid var(--line);
+       border-radius:3px;padding:.1em .38em;color:var(--dim)}
+
+  /* masthead */
+  .top{padding:70px 0 38px;border-bottom:1px solid var(--line-2)}
+  .kicker{font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.18em;
+          text-transform:uppercase;color:var(--accent);margin-bottom:20px;
+          display:flex;align-items:center;gap:11px}
+  .kicker::after{content:"";flex:1;height:1px;background:var(--line);max-width:170px}
+  h1{font-family:var(--serif);font-weight:700;font-size:clamp(2.5rem,6.2vw,4rem);
+     line-height:1.02;letter-spacing:-.025em;margin-bottom:22px;max-width:15ch;text-wrap:balance}
+  .stand{font-size:1.14rem;line-height:1.55;color:var(--dim);max-width:60ch}
+  .stand em{font-style:normal;color:var(--text);font-weight:600}
+  .links{display:flex;flex-wrap:wrap;gap:10px;margin-top:30px}
+  .lk{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-decoration:none;
+      color:var(--dim);border:1px solid var(--line-2);border-radius:6px;padding:8px 13px;
+      display:inline-flex;align-items:center;gap:7px;background:var(--surface)}
+  .lk:hover{color:var(--accent);border-color:var(--accent)}
+  .lk b{color:var(--text);font-weight:600}
+
+  section{padding:58px 0 6px}
+  .eyebrow{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.16em;
+           text-transform:uppercase;color:var(--faint);margin-bottom:12px}
+  h2{font-family:var(--serif);font-weight:600;font-size:clamp(1.7rem,3.4vw,2.3rem);
+     line-height:1.12;letter-spacing:-.016em;margin-bottom:18px;max-width:23ch;text-wrap:balance}
+  h3{font-weight:600;font-size:1.03rem;line-height:1.4;margin-bottom:8px}
+  h4{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.13em;
+     text-transform:uppercase;color:var(--faint);margin:32px 0 14px;
+     padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .lede{font-size:1.04rem;color:var(--dim)}
+
+  /* audience */
+  .split{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:28px;margin-top:28px}
+  .aud{border-top:2px solid var(--line-2);padding-top:18px;display:flex;flex-direction:column;gap:12px}
+  .aud.yes{border-top-color:var(--accent)}
+  .aud ul{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:8px}
+  .aud li{color:var(--dim)}.aud li strong{color:var(--text)}
+  .today{margin-top:30px;border-left:2px solid var(--accent);padding-left:20px;
+         max-width:var(--measure);color:var(--dim)}
+  .today b{display:block;font-family:var(--serif);font-size:1.08rem;color:var(--text);margin-bottom:6px}
+  .thesis{margin-top:34px;font-family:var(--serif);font-weight:700;
+          font-size:clamp(1.45rem,3.2vw,2rem);line-height:1.2;letter-spacing:-.018em;max-width:20ch}
+  .thesis span{color:var(--accent)}
+
+  /* job blocks */
+  .job{padding:46px 0 8px;border-top:1px solid var(--line-2)}
+  .jhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:14px;margin-bottom:18px}
+  .jname{font-family:var(--serif);font-size:clamp(1.6rem,3.3vw,2.1rem);font-weight:700;
+         letter-spacing:-.018em;line-height:1.1}
+  .jrole{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.13em;
+         text-transform:uppercase;color:var(--accent);background:var(--accent-soft);
+         padding:4px 10px;border-radius:4px}
+  .why{max-width:var(--measure);font-size:1.05rem;border-left:2px solid var(--accent);
+       padding-left:20px;margin-bottom:28px}
+
+  .made{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:0;
+        margin-top:18px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+  .cell{padding:18px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+        display:flex;flex-direction:column;gap:6px}
+  .ck{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+  .cv{font-family:var(--serif);font-size:1.5rem;font-weight:700;line-height:1;
+      font-variant-numeric:tabular-nums}
+  .cn{font-size:.88rem;color:var(--dim);line-height:1.45}
+  .cell.hi{background:var(--accent-soft)}.cell.hi .ck,.cell.hi .cv{color:var(--accent)}
+
+  .scroller{overflow-x:auto;margin-top:18px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+  table{border-collapse:collapse;width:100%;min-width:640px;font-size:.92rem}
+  th{text-align:left;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.11em;
+     text-transform:uppercase;color:var(--faint);padding:11px 15px;background:var(--sunk);
+     border-bottom:1px solid var(--line-2);white-space:nowrap}
+  td{padding:12px 15px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--dim)}
+  tr:last-child td{border-bottom:0}
+  td.k{color:var(--text);font-weight:500}
+  td.m{font-family:var(--mono);font-size:.82rem;color:var(--accent);white-space:nowrap}
+
+  .steps{display:flex;flex-direction:column;gap:19px;margin-top:18px;max-width:840px}
+  .step{display:grid;grid-template-columns:20px 1fr;gap:0 16px;align-items:start}
+  .step::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);
+                margin-top:9px;margin-left:6px}
+  .sb{display:flex;flex-direction:column;gap:6px}
+  .sb p{margin:0;color:var(--dim);max-width:var(--measure)}
+
+  /* videos */
+  .ads{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;margin-top:24px}
+  .ad{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);
+      display:flex;flex-direction:column}
+  .ad video{width:100%;aspect-ratio:9/16;display:block;background:#000;object-fit:cover}
+  .adcap{padding:15px 17px;display:flex;flex-direction:column;gap:5px;border-top:1px solid var(--line)}
+  .adcap b{font-size:.96rem}
+  .adcap span{font-size:.87rem;color:var(--dim);line-height:1.45}
+  .adcap .meta{font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+               text-transform:uppercase;color:var(--faint)}
+
+  /* dropped */
+  .drops{margin-top:24px;border-top:1px solid var(--line)}
+  .drop{display:grid;grid-template-columns:160px 1fr;gap:6px 24px;padding:18px 0;
+        border-bottom:1px solid var(--line);align-items:start}
+  .dn{font-weight:600;display:flex;flex-direction:column;gap:7px;align-items:flex-start}
+  .tag{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.1em;
+       text-transform:uppercase;padding:3px 7px;border-radius:3px}
+  .tag.cut{background:var(--sunk);color:var(--faint);border:1px solid var(--line)}
+  .tag.kept{background:rgba(94,201,160,.1);color:var(--good)}
+  .dw{color:var(--dim);max-width:var(--measure)}
+  .dw p{margin:0 0 .6em}.dw p:last-child{margin-bottom:0}
+
+  .note{margin-top:26px;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);overflow:hidden}
+  .nh{padding:14px 20px;background:var(--sunk);border-bottom:1px solid var(--line);
+      font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.13em;
+      text-transform:uppercase;color:var(--faint)}
+  .note ul{margin:0;padding:20px 22px 20px 40px;display:flex;flex-direction:column;gap:12px}
+  .note li{color:var(--dim)}.note li strong{color:var(--text)}
+  .nf{padding:15px 20px;border-top:1px solid var(--line);font-size:.93rem;color:var(--dim)}
+  .nf strong{color:var(--text)}
+
+  .callout{margin-top:22px;border-left:2px solid var(--accent);padding-left:19px;
+           max-width:var(--measure);color:var(--dim)}
+  .callout b{color:var(--text)}
+
+  footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line);
+         font-size:.88rem;color:var(--faint);max-width:var(--measure)}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  @media (max-width:640px){
+    .wrap{padding:0 17px 80px}
+    .top{padding-top:48px}
+    .drop{grid-template-columns:1fr;gap:9px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <p class="kicker">Lockin · the business work</p>
+  <h1>Three jobs, and the ones I left alone</h1>
+  <p class="stand">
+    Lockin works. Nobody knew it existed. This page is what I did about that —
+    <em>who it is for</em>, the three launch jobs I actually ran, what each one produced,
+    and the five I deliberately skipped.
+  </p>
+  <div class="links">
+    <a class="lk" href="https://navneetges-wq.github.io/study-buddy/" target="_blank" rel="noopener"><b>The app</b> ↗</a>
+    <a class="lk" href="https://discord.gg/kxqSxHcb" target="_blank" rel="noopener"><b>Discord</b> ↗</a>
+    <a class="lk" href="https://www.instagram.com/lockin_ftw/" target="_blank" rel="noopener"><b>Instagram</b> @lockin_ftw ↗</a>
+    <a class="lk" href="https://www.linkedin.com/" target="_blank" rel="noopener"><b>LinkedIn</b> ↗</a>
+  </div>
+</header>
+
+<!-- ================= WHO IT IS FOR ================= -->
+<section>
+  <p class="eyebrow">Expectation 1 · say who it's for, clearly enough that some people are left out</p>
+  <h2>One student, at one desk, losing to one phone</h2>
+  <div class="prose">
+    <p class="lede">
+      Indian undergrads in exam season — JEE, NEET, GATE, CA, semester finals. 17 to 23,
+      studying three or more hours a day at a desk with their phone face-up beside them.
+      They already watch study-with-me videos. They tried Forest and quit when killing a
+      tree stopped meaning anything. They study alone, and they'd rather not.
+    </p>
+  </div>
+
+  <div class="today">
+    <b>What that person does today, without Lockin</b>
+    A phone timer they ignore, a lo-fi tab, a WhatsApp group where six people type
+    “studying” and then don't, and no honest record on Sunday of whether those four
+    hours were four hours.
+  </div>
+
+  <div class="split">
+    <div class="aud yes">
+      <h3>Built for</h3>
+      <ul>
+        <li>Students who want to be <strong>measured</strong>, not blocked</li>
+        <li>People who study alone but want someone on the other end of the clock</li>
+        <li>Anyone who won't make an account for a timer</li>
+        <li>Phone-in-hand studiers who need to start without touching anything</li>
+      </ul>
+    </div>
+    <div class="aud">
+      <h3>Not built for — and I'd rather say it</h3>
+      <ul>
+        <li><strong>Working professionals.</strong> The vocabulary is streaks, XP and levels. It's a student product.</li>
+        <li><strong>Teams and companies.</strong> No seats, no admin, no shared workspace.</li>
+        <li><strong>Multi-device users.</strong> Data lives in one browser. There is no sync, and there won't be.</li>
+        <li><strong>Group study rooms.</strong> Together is strictly one-on-one. Ten people can't join.</li>
+        <li><strong>Anyone who wants an app blocker.</strong> Lockin never stops you.</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="thesis">It doesn't block you.<br><span>It counts you.</span></p>
+</section>
+
+<!-- ================= THE THREE JOBS ================= -->
+<section>
+  <p class="eyebrow">Expectation 2 · choose the jobs your launch needs</p>
+  <h2>Community, marketing, pricing</h2>
+  <div class="prose">
+    <p class="lede">
+      Three jobs, and they are three different kinds of work. Community is a room that
+      has to be kept alive. Marketing is a loudspeaker that only works while you're
+      holding it. Pricing is a single decision you publish once and never revisit.
+    </p>
+    <p>
+      They are in this order because that is the order they depend on each other:
+      pricing is the sentence the other two reuse, community is the thing marketing
+      has to deliver people <em>into</em>, and marketing is worthless if the other two
+      aren't ready to catch what it sends.
+    </p>
+  </div>
+
+  <!-- ---------- COMMUNITY ---------- -->
+  <article class="job">
+    <div class="jhead"><span class="jname">Community</span><span class="jrole">The home</span></div>
+    <p class="why">
+      <strong>Why I chose it:</strong> this isn't a marketing channel, it's a missing product
+      feature shipped as a room. Lockin's differentiating feature — the duel — needs a
+      <strong>second person</strong>, and the app has no way to find one. The Rivals screen
+      literally says “No rivals yet.” That's not a promotion problem, it's an unfulfilled
+      dependency visible in the interface.
+    </p>
+    <div class="prose">
+      <p>
+        Building matchmaking properly needs a server, presence, a queue and accounts — all
+        four of which destroy the zero-cost architecture and the privacy promise. So this was
+        a build-versus-buy decision where I chose neither: I borrowed infrastructure someone
+        else runs, for ₹0, and got most of the value in an hour.
+      </p>
+    </div>
+
+    <h4>What I made</h4>
+    <div class="scroller">
+      <table>
+        <thead><tr><th>Channel</th><th>What it's for</th></tr></thead>
+        <tbody>
+          <tr><td class="m">#start-here</td><td>What Lockin is, the link, the one rule. One pinned message.</td></tr>
+          <tr><td class="m">#lock-in-now</td><td>The core room. Paste a duel link; first person to react takes it.</td></tr>
+          <tr><td class="m">#streaks</td><td>One Insights screenshot a day.</td></tr>
+          <tr><td class="m">#autopsies</td><td>The bad sessions. The channel that makes the place believable.</td></tr>
+          <tr><td class="m">#bugs-and-ideas</td><td>The entire support function, answered in public.</td></tr>
+          <tr><td class="m">#changelog</td><td>What shipped, with the real numbers.</td></tr>
+          <tr><td class="m">🔇 silent-study</td><td>Voice channel. Mic off, camera off, pure presence.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>The three design decisions worth defending</h4>
+    <div class="steps">
+      <div class="step"><div class="sb">
+        <h3>Seven channels, not twenty</h3>
+        <p>Perceived liveliness is messages divided by channels. The same twenty messages look
+        like a community in seven rooms and a ghost town in thirty. There is no #general and no
+        #off-topic — every channel either produces a duel or builds trust.</p>
+      </div></div>
+      <div class="step"><div class="sb">
+        <h3>A channel specifically for failure</h3>
+        <p><code>#autopsies</code> exists because a server where everyone is winning is
+        unbelievable, and it's a miserable place to sit when you've had a bad week — which
+        pushes out exactly the people the product is for. Participation norms get set by the
+        lowest bar you publicly accept, so the pin states the bar out loud.</p>
+      </div></div>
+      <div class="step"><div class="sb">
+        <h3>The invite is wired into the app in four places</h3>
+        <p>No accounts means no email list, so the invite is the only way to reach a user a
+        second time. It sits in the tab bar, under “No rivals yet” on Together, on the
+        session-complete card, and in the footer. It is also a <strong>permanent</strong>
+        invite — a default Discord link expires after seven days and takes every copy of
+        itself with it, including the one inside the app.</p>
+      </div></div>
+    </div>
+  </article>
+
+  <!-- ---------- MARKETING ---------- -->
+  <article class="job">
+    <div class="jhead"><span class="jname">Marketing</span><span class="jrole">The loudspeaker</span></div>
+    <p class="why">
+      <strong>Why I chose it:</strong> it's the only job that produces first-time visitors at
+      speed, and I have two hooks nothing else in the category has — you start the timer by
+      <strong>talking to it</strong>, and two people can <strong>race the same clock</strong>
+      over one link. Both are visible in three seconds, which is all a scroll gives you.
+    </p>
+    <div class="prose">
+      <p>
+        The binding constraint was production capacity, not ideas: one person, no budget, and
+        a Discord ritual to run every evening. So I optimised for <em>deriving</em> assets
+        rather than making them — two animated ads became roughly thirty postable pieces
+        through ratio cuts, length cuts and frame extraction, because every keyframe of an
+        animation is already a designed composition.
+      </p>
+    </div>
+
+    <h4>Where it went, and why each one</h4>
+    <div class="scroller">
+      <table>
+        <thead><tr><th>Channel</th><th>Why this one</th><th>What's there</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="k">Instagram<br><span class="m">@lockin_ftw</span></td>
+            <td>Where the target group actually is, in the state Lockin is for — on a phone, at 9 PM, in a break they didn't plan. StudyGram is a large active Indian subculture.</td>
+            <td>18 posts, including three <strong>grid banners</strong> that each span a full row: <em>41 TIMES / YOU LEFT YOUR / STUDY TAB.</em></td>
+          </tr>
+          <tr>
+            <td class="k">LinkedIn</td>
+            <td>Not where users are — where faculty, seniors and people who write about student projects are. A credibility channel, and I'd rather say that than pretend otherwise.</td>
+            <td>Four posts: the why, who it's for, the distinction, and the pricing argument.</td>
+          </tr>
+          <tr>
+            <td class="k">Discord</td>
+            <td>Every post terminates here rather than at the app. The URL is free to try; the room is what makes someone come back tomorrow.</td>
+            <td>One destination on every post. Never two.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>The two ads</h4>
+    <div class="prose"><p>
+      Faceless, because the product <em>is</em> a screen and the proof is on-screen numbers —
+      which also means one cut works on every platform with no re-record.
+    </p></div>
+    <div class="ads">
+      <figure class="ad">
+        <video src="media/ad1.mp4" controls preload="metadata" playsinline></video>
+        <figcaption class="adcap">
+          <span class="meta">Ad 1 · 1080×1920 · 22s</span>
+          <b>The short cut</b>
+          <span>Runs as the Reel, the YouTube Short, and a WhatsApp Status without re-editing.</span>
+        </figcaption>
+      </figure>
+      <figure class="ad">
+        <video src="media/ad2.mp4" controls preload="metadata" playsinline></video>
+        <figcaption class="adcap">
+          <span class="meta">Ad 2 · 1080×1920 · 42s</span>
+          <b>The long cut</b>
+          <span>The full walkthrough. Its keyframes became the static posts and carousel slides.</span>
+        </figcaption>
+      </figure>
+    </div>
+
+  </article>
+
+  <!-- ---------- PRICING ---------- -->
+  <article class="job">
+    <div class="jhead"><span class="jname">Pricing</span><span class="jrole">The promise</span></div>
+    <p class="why">
+      <strong>Why I chose it:</strong> it takes an afternoon and its output is a sentence every
+      other job reuses. A launch that can't say what it costs looks unfinished — and “free”
+      is only a real answer if you can say why.
+    </p>
+
+    <h4>Why Lockin is free</h4>
+    <div class="prose">
+      <p>
+        The instinct is to defend free on cost: no server, nothing to recover. That's true and
+        it's the wrong opening. Cost explains why free is <em>possible</em>, not why it's
+        <em>right</em>, and one question goes straight through it — plenty of cheap products
+        still charge. So the cost fact goes last.
+      </p>
+      <p>
+        <strong>Lockin's product isn't the timer. It's the person on the other end of the
+        link.</strong> There are thousands of study timers and most are free; the only thing
+        Lockin has that they don't is a second person. That makes it a network good — its
+        value to any one member rises with the number of other members — and it changes what
+        a price <em>is</em>.
+      </p>
+    </div>
+
+    <div class="steps">
+      <div class="step"><div class="sb">
+        <h3>A price is a filter, not revenue</h3>
+        <p>In an ordinary product a lost sale costs the seller one sale. In a network good a
+        lost member costs <strong>every remaining member</strong> something: one fewer person
+        online at 9 PM, one longer wait before anyone takes your link. The arithmetic isn't
+        “₹50 × the people who pay” — it's that minus a worse product for all of them.</p>
+      </div></div>
+      <div class="step"><div class="sb">
+        <h3>A price lands exactly where the loop is weakest</h3>
+        <p>Lockin grows one way: someone sends a link to someone who doesn't use it. That
+        second person has no trust and thirty seconds of patience, and a paywall lands on
+        precisely them. If enough decline, each user recruits fewer than one more and growth
+        doesn't slow — it ends.</p>
+      </div></div>
+      <div class="step"><div class="sb">
+        <h3>A price changes what the room is</h3>
+        <p>Someone who pays is a customer and expects service. Someone who joins free is a
+        participant — they take a stranger's duel, they post the session where they managed 12
+        minutes out of 45. Every ritual in the server depends on reciprocity, and money
+        reframes every interaction it touches.</p>
+      </div></div>
+      <div class="step"><div class="sb">
+        <h3>And then, last: there is no bill</h3>
+        <p>Static site, browser-to-browser duels, every session stored in the user's own
+        browser. The thousandth user consumes what the first did: nothing. Most free products
+        are free <em>until</em> — until the runway ends, until the bill lands. Lockin has no
+        such moment scheduled, which is why it can be promised permanently rather than hoped
+        for.</p>
+      </div></div>
+    </div>
+
+    <div class="callout">
+      <b>Never charged for, written down so it's expensive to break:</b> starting a timer,
+      duelling a friend, voice control, insights, achievements, the journal. And no ads — that
+      one isn't conditional. An advertisement inside a focus app is a contradiction.
+    </div>
+  </article>
+</section>
+
+<!-- ================= WORKS WITHOUT ME ================= -->
+<section>
+  <p class="eyebrow">Expectation 3 · make things that work while you're not standing next to them</p>
+  <h2>What keeps running when I close the laptop</h2>
+  <div class="prose"><p class="lede">
+    The test I applied to everything: if I stopped tonight, does it still do its job tomorrow?
+    Five things pass.
+  </p></div>
+
+  <div class="scroller">
+    <table>
+      <thead><tr><th>The thing</th><th>What it does without me</th></tr></thead>
+      <tbody>
+        <tr><td class="k">The Discord invite inside the app</td><td>Every person who finishes a session or opens an empty Rivals screen is offered somewhere to find a partner. No post required.</td></tr>
+        <tr><td class="k">A permanent invite link</td><td>Never expires and has unlimited uses, so every copy already in the wild keeps working — the default seven-day link would have died silently.</td></tr>
+        <tr><td class="k">Pinned messages in all seven channels</td><td>A new member learns the duel handshake, the one rule and the 8 PM ritual without anyone being online to explain it.</td></tr>
+        <tr><td class="k">The Instagram grid banners</td><td>Three spanning rows that keep arguing at anyone who lands on the profile from any post, months after the post itself is buried.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <b>The one that took a real decision:</b> mentions-only notifications on the server.
+    Discord's default pings every member for every message, new members mute within two days
+    and never return. One invisible setting decides whether the ritual has an audience at all.
+  </div>
+</section>
+
+<!-- ================= THE NOTE ================= -->
+<section>
+  <p class="eyebrow">Deliverable 2 · the short note</p>
+  <h2>Who it's for, what I picked, what I dropped</h2>
+
+  <div class="note">
+    <div class="nh">Lockin — launch note</div>
+    <ul>
+      <li><strong>Who it's for.</strong> Indian undergrads in exam season, 17 to 23, who study three or more hours a day at a desk with their phone face-up beside them. They tried Forest and quit. They study alone and would rather not.</li>
+      <li><strong>Who it's not for.</strong> Working professionals, teams, anyone who needs it on two devices, anyone who wants a group room, and anyone who wants an app blocker. Lockin never stops you — it counts you.</li>
+      <li><strong>Jobs picked — three.</strong> <em>Community</em>, because the duel needs a second person and the app has no way to find one; the server is a missing feature, not a marketing channel. <em>Marketing</em>, because voice control and the duel are hooks nobody else has and the footage already existed. <em>Pricing</em>, because the answer is a sentence every other job reuses.</li>
+      <li><strong>Jobs dropped — five.</strong> <em>Marketplace</em>, because a listing sends strangers to an app with an empty Rivals list. <em>Sales</em>, because the only yes worth closing is the duel handshake and the community produces it faster. <em>Support</em>, absorbed into one channel with a 24-hour fix promise. <em>PR</em> and <em>Partners</em>, both held behind stated triggers because neither has anything to work with yet.</li>
+    </ul>
+    <div class="nf">
+      <strong>How I'll know it worked:</strong> five people posting a seven-day streak.
+      Followers, impressions and member counts are all easier to get and none of them mean
+      the product is doing its job.
+    </div>
+  </div>
+</section>
+
+<footer>
+  Lockin — a free focus timer you run by voice and race a friend on. No account, no install,
+  no backend. Built by a student, launched in public, numbers reported as they are.
+</footer>
+
+</div>
+</body>
+</html>
