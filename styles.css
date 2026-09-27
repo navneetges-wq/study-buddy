@@ -475,3 +475,27 @@ body.idle-focus .dial-wrap{width:min(234px,42vw,30vh);height:min(234px,42vw,30vh
 body.idle-focus .focus-body{gap:18px}
 body.focus-mode .wotd{margin-top:20px;padding-top:16px}
 body.idle-focus .focus-logo{height:28px;width:142px}
+
+/* ---- Discord: the app can't find you a duel partner, the server can ---- */
+.dlink{color:var(--accent);text-decoration:underline;text-underline-offset:2px;
+  text-decoration-thickness:1px;text-decoration-color:rgba(124,140,255,.45)}
+.dlink:hover{text-decoration-color:var(--accent)}
+
+.joinline{margin:14px 0 0;font-size:13.5px;line-height:1.5}
+
+.sitefoot{margin:44px 0 0;padding:20px 0 8px;
+  border-top:1px solid var(--line);display:flex;flex-direction:column;gap:5px}
+.sitefoot p{margin:0;font-size:12.5px;color:var(--faint);line-height:1.5}
+
+.tab-out{text-decoration:none;color:var(--accent);opacity:.72;display:inline-flex;
+  align-items:center;gap:5px;line-height:inherit}
+.tab-out:hover{opacity:1;color:var(--accent)}
+.tab-out .out{font-size:11px;opacity:.75}
+
+/* the length row is a flex container filling its parent, so the box looks
+   centred while its buttons stay packed left — centre the contents too */
+body.focus-mode .dur-row,
+body.focus-mode .setup,
+body.focus-mode .live,
+body.focus-mode .partner-stats{justify-content:center}
+body.focus-mode .setup{text-align:center}
