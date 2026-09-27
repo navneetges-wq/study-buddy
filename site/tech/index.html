@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lockin — How It Works</title>
+<meta name="description" content="The technical build behind Lockin: the APIs it calls, where it stores data, and how two browsers run a synced study duel with no server.">
+<link rel="icon" href="assets/lockin-favicon.svg">
+<meta name="theme-color" content="#0b0d11">
+<style>
+@font-face{font-family:'Eczar';src:url(assets/eczar-bold.woff2) format('woff2');
+  font-weight:700;font-style:normal;font-display:swap}
+:root{
+  --bg:#0b0d11; --surface:#12151b; --surface2:#171b22;
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.15);
+  --text:#e8eaf0; --dim:#98a0ae; --faint:#69707e; --accent:#7c8cff;
+  --good:#5ec9a0; --bad:#e07b7b; --r:14px;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Helvetica Neue",Inter,Roboto,sans-serif;
+  --ecz:'Eczar',Georgia,serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+  font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1020px;margin:0 auto;padding:0 26px}
+a{color:var(--accent)}
+
+/* ---------------- masthead ---------------- */
+.mast{padding:76px 0 46px;border-bottom:1px solid var(--line)}
+.mast .logo{height:46px;width:auto;margin-bottom:34px;display:block}
+.mast h1{font:700 62px/1.04 var(--ecz);letter-spacing:-.02em;margin:0 0 18px}
+.mast .sub{color:var(--dim);font-size:19px;line-height:1.55;max-width:62ch;margin:0}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;margin-top:34px}
+.meta b{color:var(--text);font-weight:600;display:block;font-size:14px;margin-bottom:3px}
+.meta div{color:var(--dim);font-size:14px}
+
+/* ---------------- sections ---------------- */
+section{padding:56px 0;border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:0}
+.tag{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+.tag span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.tag i{flex:1;height:1px;background:var(--line);font-style:normal}
+h2{font:700 40px/1.12 var(--ecz);letter-spacing:-.018em;margin:0 0 14px}
+h3{font-size:17px;font-weight:600;margin:0 0 7px;letter-spacing:-.01em}
+.intro{color:var(--dim);font-size:17px;line-height:1.6;max-width:72ch;margin:0}
+p{color:var(--dim);max-width:72ch}
+p b{color:var(--text);font-weight:600}
+.note{color:var(--faint);font-size:13.5px;line-height:1.5;margin:9px 0 0;max-width:72ch}
+.mono{font-family:var(--mono);font-size:13px}
+
+/* ---------------- blocks ---------------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;margin-top:26px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-top:26px}
+.card p{margin:0;font-size:14.5px}
+.card p+p{margin-top:9px}
+
+table{width:100%;border-collapse:collapse;margin-top:26px;font-size:14.5px}
+th{text-align:left;color:var(--faint);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  font-weight:500;padding:0 14px 10px 0;border-bottom:1px solid var(--line2)}
+td{padding:13px 14px 13px 0;border-bottom:1px solid var(--line);color:var(--dim);vertical-align:top}
+td:first-child{color:var(--text);font-weight:500;white-space:nowrap}
+td code,p code,li code{font-family:var(--mono);font-size:12.5px;color:var(--accent);
+  background:var(--surface2);padding:2px 6px;border-radius:5px}
+
+pre{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:18px 20px;overflow-x:auto;margin:22px 0 0}
+pre code{font-family:var(--mono);font-size:13px;color:var(--dim);background:none;padding:0;line-height:1.7}
+pre .hl{color:var(--accent)}
+pre .bad{color:var(--bad)}
+pre .ok{color:var(--good)}
+
+ul{color:var(--dim);max-width:72ch;padding-left:20px}
+li{margin-bottom:8px}
+li b{color:var(--text);font-weight:600}
+
+.pull{border-left:2px solid var(--accent);padding:4px 0 4px 20px;margin:26px 0 0;
+  color:var(--text);font-size:17px;line-height:1.55;max-width:66ch}
+.pull span{color:var(--faint);font-size:13.5px;display:block;margin-top:7px}
+
+.kv{display:flex;gap:10px;align-items:baseline;font-size:14.5px;margin-top:10px}
+.kv b{color:var(--text);font-weight:600;min-width:112px;flex:none}
+.kv span{color:var(--dim)}
+
+.step{display:flex;gap:16px;margin-top:22px;align-items:flex-start}
+.step .n{width:27px;height:27px;border-radius:50%;border:1px solid var(--accent);color:var(--accent);
+  display:grid;place-items:center;font-size:13px;font-weight:600;flex:none;margin-top:2px}
+.step div p{margin:0;font-size:14.5px}
+.step div h3{margin-bottom:4px}
+
+figure{margin:30px 0 0}
+figure svg{width:100%;height:auto;display:block}
+figcaption{color:var(--faint);font-size:13px;margin-top:13px;text-align:center}
+
+.foot{padding:44px 0 70px;color:var(--faint);font-size:13.5px}
+.foot a{color:var(--dim)}
+
+@media(max-width:640px){
+  .mast{padding:52px 0 34px}
+  .mast h1{font-size:42px}
+  .mast .sub{font-size:17px}
+  h2{font-size:31px}
+  section{padding:42px 0}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<!-- ================================ MASTHEAD ================================ -->
+<header class="mast">
+  <img class="logo" src="assets/lockin-lockup-dark.svg" alt="Lockin">
+  <h1>How It Works</h1>
+  <p class="sub">The technical build behind <b style="color:var(--text)">Lockin</b> — a
+    distraction-aware study companion. What it calls over the internet, where it keeps your
+    data, and how two browsers run a synced study duel with no server between them.</p>
+  <div class="meta">
+    <div><b>The app</b><a href="https://navneetges-wq.github.io/study-buddy/">navneetges-wq.github.io/study-buddy</a></div>
+    <div><b>Built with</b>HTML, CSS, JavaScript — no framework, no build step</div>
+    <div><b>Size</b>9 files, ~4,600 lines</div>
+    <div><b>Backend</b>None. API keys: none.</div>
+  </div>
+</header>
+
+<!-- ================================ BASICS ================================ -->
+<section>
+  <div class="tag"><span>01 — The shape of it</span><i></i></div>
+  <h2>Three kinds of file, and nothing else</h2>
+  <p class="intro">A web app is a website that <em>does</em> something rather than just showing
+    text. Lockin is made of three kinds of file, and every one of them runs on your own
+    computer.</p>
+
+  <div class="grid3">
+    <div class="card">
+      <h3>HTML — the skeleton</h3>
+      <p>Says <em>there is a timer here, buttons there</em>. Structure only, no behaviour.</p>
+    </div>
+    <div class="card">
+      <h3>CSS — the clothes</h3>
+      <p>Says <em>make it dark, round the corners, centre that</em>. Appearance only.</p>
+    </div>
+    <div class="card">
+      <h3>JavaScript — the brain</h3>
+      <p>Says <em>when this is clicked, start counting down</em>. All the behaviour lives here.</p>
+    </div>
+  </div>
+
+  <p class="pull">Everything runs <b>in the browser</b>. This is called client-side. There is no
+    computer of mine running anything — GitHub hands your browser the files, and your own laptop
+    does all the work.
+    <span>Which is why there is no login, no database, and nothing to attack.</span></p>
+
+  <table>
+    <tr><th>File</th><th>Lines</th><th>Its one job</th></tr>
+    <tr><td>index.html</td><td>519</td><td>Every screen, button and dialog</td></tr>
+    <tr><td>styles.css</td><td>501</td><td>The whole look, including full-screen focus mode</td></tr>
+    <tr><td>js/app.js</td><td>1,884</td><td>Timers, screens, buttons — the main brain</td></tr>
+    <tr><td>js/voice-control.js</td><td>401</td><td>Listening, understanding, speaking back</td></tr>
+    <tr><td>js/services.js</td><td>438</td><td>Talking to the outside world</td></tr>
+    <tr><td>js/store.js</td><td>308</td><td>Saving, loading, and the maths over your history</td></tr>
+    <tr><td>js/together.js</td><td>253</td><td>Study with a friend, and the duel</td></tr>
+    <tr><td>js/ambience.js</td><td>207</td><td>Generating the focus sounds</td></tr>
+    <tr><td>js/progress.js</td><td>114</td><td>XP, levels, achievements</td></tr>
+  </table>
+</section>
+
+<!-- ================================ API ================================ -->
+<section>
+  <div class="tag"><span>02 — What an API is</span><i></i></div>
+  <h2>A web address that answers programs, not people</h2>
+  <p class="intro">A normal website sends back a page for humans. An <b>API</b> sends back raw
+    data for programs — no colours, no layout, just facts. The data arrives as <b>JSON</b>: a
+    labelled list like <code>{"temperature": 31, "weather_code": 61}</code>. My code reads the
+    labels it needs.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Web APIs — outside services</h3>
+      <p>Run by someone else, somewhere on the internet. I'm a customer. Lockin calls four
+        addresses, and none of them needs an API key.</p>
+    </div>
+    <div class="card">
+      <h3>Browser APIs — already in Chrome</h3>
+      <p>Tools built into the browser itself. Nothing is downloaded; I just call them. Most of
+        Lockin is made of these.</p>
+    </div>
+  </div>
+  <p class="note">Knowing the difference between those two is usually worth marks on its own.</p>
+</section>
+
+<!-- ================================ OUTSIDE APIS ================================ -->
+<section>
+  <div class="tag"><span>03 — The outside world</span><i></i></div>
+  <h2>Four addresses, no keys</h2>
+
+  <h3 style="margin-top:26px">Open-Meteo — weather, in two steps</h3>
+  <pre><code>1. <span class="hl">geocoding-api.open-meteo.com</span>/v1/search?name=Chennai
+   → turns a place <em>name</em> into coordinates
+
+2. <span class="hl">api.open-meteo.com</span>/v1/forecast?latitude=13.08&amp;longitude=80.27
+   → returns temperature and a weather code for that point</code></pre>
+  <p style="margin-top:18px">Why two calls? Weather services don't understand place names, only
+    coordinates. The first translates <em>Chennai</em> into numbers; the second asks for the
+    weather at those numbers. It returns a <b>weather code</b> — <code>61</code> means light rain
+    — which the app turns into a mood that changes its entire colour scheme.</p>
+
+  <h3 style="margin-top:34px">Two dictionaries — the word of the day</h3>
+  <pre><code>1. <span class="hl">api.dictionaryapi.dev</span>/api/v2/entries/en/petrichor   first choice
+2. <span class="hl">en.wiktionary.org</span>/api/rest_v1/page/definition/…    backup
+3. a short definition stored inside the app                 last resort</code></pre>
+
+  <p class="pull">The dictionary listed in the brief <b>was down while I built this</b> — error
+    522, then no response at all. That is exactly why there are three layers.
+    <span>I tested the bottom layer by deliberately blocking both dictionaries. It still shows a
+    full definition. The fallback is proven, not theoretical.</span></p>
+
+  <p style="margin-top:26px">Every request carries a deadline, so a dead service can never freeze
+    the page. The built-in definition paints immediately and is quietly upgraded if a dictionary
+    answers — so the screen never shows a gap.</p>
+</section>
+
+<!-- ================================ QUOTES ================================ -->
+<section>
+  <div class="tag"><span>04 — A decision worth defending</span><i></i></div>
+  <h2>Why the quotes are not from an API</h2>
+  <p class="intro">They used to be. A general-purpose quotes API produced
+    <em>“Luxury must be comfortable, otherwise it is not luxury”</em> — useless for a focus app.
+    I tried to fix it with filtering before giving up on the source entirely.</p>
+
+  <table>
+    <tr><th>Attempt</th><th>Passed</th><th>What still got through</th></tr>
+    <tr><td>Keyword filter</td><td>14% of 420</td><td>“Technological progress is like an axe in the hands of a pathological criminal.”</td></tr>
+    <tr><td>Strict phrase filter</td><td>4.5% of 420</td><td>Half were philosophy, not motivation — “Reality is merely an illusion.”</td></tr>
+  </table>
+
+  <p style="margin-top:26px">Then I tried four replacement APIs. Two were dead, two refused
+    browsers. So the 55 quotes are curated inside the app, all about starting, effort, discipline
+    and not stopping.</p>
+
+  <p class="pull">You cannot filter quality into a source that does not have it.
+    <span>The internet requirement is still met several times over by the weather and dictionary
+    calls.</span></p>
+</section>
+
+<!-- ================================ CORS ================================ -->
+<section>
+  <div class="tag"><span>05 — The trap</span><i></i></div>
+  <h2>It worked in the terminal and failed in the browser</h2>
+  <p class="intro">One replacement API looked perfect. I tested it from the command line and it
+    returned exactly what I wanted. In the real app it returned nothing at all.</p>
+
+  <pre><code>zenquotes.io    <span class="ok">HTTP 200</span> in curl   →   <span class="bad">blocked in the browser</span>
+                  no access-control-allow-origin header</code></pre>
+
+  <p style="margin-top:18px"><b>CORS</b> is a security rule: a website must give permission before
+    another website's code may read its data. Without that permission the browser refuses — to
+    protect you. The catch is that <b>command-line tools ignore CORS and browsers enforce it</b>,
+    so something can pass a test and still fail in production.</p>
+
+  <p class="pull">Testing an API with curl does not prove it works in a browser.
+    <span>This is the single most useful thing I learned building Lockin.</span></p>
+</section>
+
+<!-- ================================ BROWSER APIS ================================ -->
+<section>
+  <div class="tag"><span>06 — Built into the browser</span><i></i></div>
+  <h2>Where most of the app actually lives</h2>
+  <table>
+    <tr><th>Tool</th><th>In plain terms</th><th>Used for</th></tr>
+    <tr><td>localStorage</td><td>A notebook the browser keeps for my site</td><td>Everything you save</td></tr>
+    <tr><td>Page Visibility</td><td>Tells my page the instant it is hidden</td><td>Automatic tab-leave detection</td></tr>
+    <tr><td>Web Audio</td><td>Makes sound out of maths</td><td>Rain, lo-fi, café, white noise</td></tr>
+    <tr><td>Web Speech</td><td>Voice → text, and text → voice</td><td>Hands-free control</td></tr>
+    <tr><td>Notifications</td><td>Desktop pop-ups</td><td>Session reminders</td></tr>
+    <tr><td>Geolocation</td><td>Asks for your location</td><td>Weather without typing a city</td></tr>
+    <tr><td>BroadcastChannel</td><td>Walkie-talkie between tabs</td><td>Study together, one device</td></tr>
+    <tr><td>WebRTC</td><td>Direct phone line between browsers</td><td>Study together, two devices</td></tr>
+    <tr><td>Clipboard</td><td>Copies text</td><td>The copy-link buttons</td></tr>
+  </table>
+</section>
+
+<!-- ================================ STORAGE ================================ -->
+<section>
+  <div class="tag"><span>07 — Memory</span><i></i></div>
+  <h2>Where your data lives, and why it survives</h2>
+  <p class="intro">Everything sits in <b>localStorage</b> — a small box the browser gives each
+    website, saved on your own hard drive. It survives closing the browser and restarting the
+    machine. It is never sent to me or anyone else.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3><code>lockin.v1</code></h3>
+      <p>Sessions, plans, minutes per day, settings, XP, achievements, head-to-head records,
+        duels, today's quote and word.</p>
+    </div>
+    <div class="card">
+      <h3><code>lockin.active</code></h3>
+      <p>The session running <em>right now</em>, written every couple of seconds — so an
+        accidental refresh mid-session doesn't lose your work.</p>
+    </div>
+  </div>
+
+  <p style="margin-top:26px">One detail worth mentioning out loud: localStorage stores
+    <b>text only</b>. Objects are flattened to text going in and rebuilt coming out — like writing
+    a filled form onto a single line and reading it back later.</p>
+
+  <p class="note">The app was renamed twice during development. On first load it checks the old
+    storage names, copies anything it finds into the new one, and deletes the old. Nobody loses
+    their history to a rename.</p>
+</section>
+
+<!-- ================================ THE DUEL ================================ -->
+<section>
+  <div class="tag"><span>08 — The centrepiece</span><i></i></div>
+  <h2>Two laptops, one timer, no server</h2>
+  <p class="intro">This is the hardest thing in the project. Normally, for two people to see the
+    same thing, both talk to a central computer. I don't have one. So how do two laptops agree on
+    anything?</p>
+
+  <figure>
+    <svg viewBox="0 0 900 430" xmlns="http://www.w3.org/2000/svg" role="img"
+         aria-label="Diagram: the invite link carries the start time so both browsers count down independently; a direct peer-to-peer channel carries live stats.">
+      <defs>
+        <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+          <path d="M0 0 L9 4.5 L0 9 z" fill="#7c8cff"/>
+        </marker>
+        <marker id="ar2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+          <path d="M0 0 L9 4.5 L0 9 z" fill="#69707e"/>
+        </marker>
+      </defs>
+
+      <!-- laptops -->
+      <rect x="40" y="78" width="228" height="128" rx="12" fill="#12151b" stroke="rgba(255,255,255,.15)"/>
+      <text x="154" y="110" fill="#e8eaf0" font-family="sans-serif" font-size="15" font-weight="600" text-anchor="middle">You</text>
+      <text x="154" y="140" fill="#7c8cff" font-family="monospace" font-size="21" text-anchor="middle">24:58</text>
+      <text x="154" y="170" fill="#69707e" font-family="sans-serif" font-size="12" text-anchor="middle">own clock, counting down</text>
+
+      <rect x="632" y="78" width="228" height="128" rx="12" fill="#12151b" stroke="rgba(255,255,255,.15)"/>
+      <text x="746" y="110" fill="#e8eaf0" font-family="sans-serif" font-size="15" font-weight="600" text-anchor="middle">Your friend</text>
+      <text x="746" y="140" fill="#7c8cff" font-family="monospace" font-size="21" text-anchor="middle">24:58</text>
+      <text x="746" y="170" fill="#69707e" font-family="sans-serif" font-size="12" text-anchor="middle">own clock, counting down</text>
+
+      <!-- the link -->
+      <rect x="300" y="100" width="300" height="52" rx="9" fill="#171b22" stroke="#7c8cff" stroke-opacity=".5"/>
+      <text x="450" y="122" fill="#e8eaf0" font-family="monospace" font-size="11.5" text-anchor="middle">#join=…start 19:30:00…45min</text>
+      <text x="450" y="140" fill="#98a0ae" font-family="sans-serif" font-size="11.5" text-anchor="middle">the invite link carries the start time</text>
+      <line x1="268" y1="126" x2="296" y2="126" stroke="#7c8cff" stroke-width="1.5" marker-end="url(#ar)"/>
+      <line x1="604" y1="126" x2="628" y2="126" stroke="#7c8cff" stroke-width="1.5" marker-end="url(#ar)"/>
+
+      <text x="450" y="186" fill="#5ec9a0" font-family="sans-serif" font-size="12.5" text-anchor="middle">
+        No connection needed — both browsers do the same subtraction
+      </text>
+
+      <!-- divider -->
+      <line x1="40" y1="222" x2="860" y2="222" stroke="rgba(255,255,255,.08)"/>
+      <text x="40" y="252" fill="#69707e" font-family="sans-serif" font-size="11.5" letter-spacing="1.4">LIVE STATS — THIS PART DOES NEED A CONNECTION</text>
+
+      <!-- p2p channel -->
+      <rect x="40" y="272" width="228" height="86" rx="12" fill="#12151b" stroke="rgba(255,255,255,.15)"/>
+      <text x="154" y="302" fill="#e8eaf0" font-family="sans-serif" font-size="14" text-anchor="middle">Your browser</text>
+      <text x="154" y="326" fill="#69707e" font-family="sans-serif" font-size="12" text-anchor="middle">focused 12m · 2 tab leaves</text>
+
+      <rect x="632" y="272" width="228" height="86" rx="12" fill="#12151b" stroke="rgba(255,255,255,.15)"/>
+      <text x="746" y="302" fill="#e8eaf0" font-family="sans-serif" font-size="14" text-anchor="middle">Their browser</text>
+      <text x="746" y="326" fill="#69707e" font-family="sans-serif" font-size="12" text-anchor="middle">focused 11m · 5 tab leaves</text>
+
+      <line x1="272" y1="300" x2="624" y2="300" stroke="#7c8cff" stroke-width="2" marker-end="url(#ar)"/>
+      <line x1="628" y1="330" x2="276" y2="330" stroke="#7c8cff" stroke-width="2" marker-end="url(#ar)"/>
+      <text x="450" y="292" fill="#7c8cff" font-family="sans-serif" font-size="12.5" text-anchor="middle">direct, encrypted, browser to browser</text>
+      <text x="450" y="352" fill="#69707e" font-family="sans-serif" font-size="11.5" text-anchor="middle">WebRTC data channel — nothing passes through a server</text>
+
+      <!-- stun -->
+      <rect x="352" y="386" width="196" height="34" rx="8" fill="none" stroke="#69707e" stroke-dasharray="4 4"/>
+      <text x="450" y="407" fill="#98a0ae" font-family="sans-serif" font-size="11.5" text-anchor="middle">STUN — “what is my address?”</text>
+      <line x1="450" y1="360" x2="450" y2="382" stroke="#69707e" stroke-dasharray="4 4" marker-end="url(#ar2)"/>
+    </svg>
+    <figcaption>The timer needs no connection at all. Only the live stats do.</figcaption>
+  </figure>
+
+  <h3 style="margin-top:44px">Part one — the synced timer</h3>
+  <p>The trick is to <b>put the information inside the link</b>. When you create a room, the app
+    writes the room id, your name, the exact start time and the length into the web address
+    itself. Your friend opens that link and their browser reads those details straight out of it.
+    Both browsers now know the same start time, so both count down to the same moment using their
+    own clocks.</p>
+
+  <p class="pull">I don't send the timer between them. I send the <b>start time</b> inside the
+    link, and both browsers do the same subtraction.
+    <span>It's arithmetic, not communication — which is why it works with no server and no
+    connection.</span></p>
+
+  <h3 style="margin-top:38px">Part two — live stats</h3>
+  <p>Seeing your friend's tab-leaves <em>as they happen</em> cannot be done with arithmetic. That
+    is real information moving between two machines, and it needs a channel.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Same browser, two tabs</h3>
+      <p><b>BroadcastChannel.</b> Tabs of one browser can shout to each other, like people in the
+        same room.</p>
+    </div>
+    <div class="card">
+      <h3>Two different devices</h3>
+      <p><b>WebRTC.</b> A direct, encrypted connection between the two browsers. Not through my
+        server — I have none. The computers talk to each other.</p>
+    </div>
+  </div>
+
+  <h3 style="margin-top:38px">How two strangers' browsers find each other</h3>
+
+  <div class="step">
+    <div class="n">1</div>
+    <div>
+      <h3>A mirror, not a middleman</h3>
+      <p>A <b>STUN server</b> answers exactly one question: <em>what does my address look like from
+        the outside?</em> It carries none of your data — it only helps the two find each other.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="n">2</div>
+    <div>
+      <h3>The handshake travels in a link</h3>
+      <p>Each browser writes a description of itself — how to reach it, plus encryption keys — and
+        the two must swap these. Normally a server relays them. I have none, <b>so the link carries
+        it</b>. You send one link; their browser automatically produces a reply link; you paste it
+        once; connected.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="n">3</div>
+    <div>
+      <h3>Squeezing 2,000 characters into 500</h3>
+      <p>That connection description is normally about <b>2,000 characters</b> — far too long to
+        send over a chat app. But for a simple data connection almost all of it is identical every
+        time. Only five things actually differ: two ID codes, a security fingerprint, a role, and
+        the network addresses. I keep those five and <b>rebuild the rest from a template</b> on the
+        other side.</p>
+    </div>
+  </div>
+
+  <pre><code>full connection description   ~2,000 characters   <span class="bad">too long to send</span>
+keep only what differs          ~500 characters   <span class="ok">fits in a chat message</span></code></pre>
+
+  <h3 style="margin-top:38px">When the connection fails</h3>
+  <p>Some mobile networks block direct connections. Then the timer <b>still syncs</b> — that never
+    needed a connection — and each side sends a short <b>result link</b> at the end, so the duel
+    still settles. Nothing is lost; it degrades.</p>
+
+  <h3 style="margin-top:38px">The duel itself</h3>
+  <p>When both finish, the scores are compared. The <b>focus score</b> is a formula, not a
+    guess:</p>
+  <pre><code>55%  how much of your planned time you actually focused
+45%  focused time versus time away
+−3   points for every distraction you logged yourself
+     clamped to 0–100</code></pre>
+  <p style="margin-top:18px">Higher score wins. The result goes into a permanent head-to-head
+    record against that friend — <code>3W 1L 0D</code> — along with a co-study streak. Rematch is
+    one button.</p>
+</section>
+
+<!-- ================================ THE REST ================================ -->
+<section>
+  <div class="tag"><span>09 — The rest of the machinery</span><i></i></div>
+  <h2>Small decisions that keep it honest</h2>
+
+  <div class="kv"><b>The timer</b><span>Records the clock time you started and subtracts, rather
+    than counting ticks. Browsers deliberately slow timers in background tabs, so counting would
+    drift and undercount. Comparing timestamps stays accurate.</span></div>
+
+  <div class="kv"><b>Distractions</b><span>The Page Visibility API fires the instant the page is
+    hidden. The app adds one tab-leave and starts counting that time as “away”.</span></div>
+
+  <div class="kv"><b>The honest limit</b><span>The browser tells me you left <em>my page</em>. It
+    cannot tell me what you switched to — no website can, and that is a good thing.</span></div>
+
+  <div class="kv"><b>Focus sounds</b><span>No audio files at all. Random numbers are generated as
+    raw sound — that is literally what static is — then filtered into rain or lo-fi. Nothing to
+    download, and it never loops.</span></div>
+
+  <div class="kv"><b>Hands-free</b><span>Chrome is asked for five guesses and the first that makes
+    sense wins. Known mishearings are repaired (<em>paws</em> → pause, <em>finnish</em> → finish),
+    and the wake word is judged by shape, because a fixed list missed “locket” and silently dropped
+    the command.</span></div>
+
+  <div class="kv"><b>The greeting</b><span>Open-Meteo is asked with <code>timezone=auto</code>, so
+    its hour is the hour <em>in your city</em>, not on your device. Tested from one machine at
+    midnight: Reykjavik said evening, Sydney late night, Chicago afternoon.</span></div>
+
+  <div class="kv"><b>Streaks and XP</b><span>Plain maths over your saved sessions — averages,
+    counting backwards through dates, totals per weekday.</span></div>
+</section>
+
+<!-- ================================ HOSTING ================================ -->
+<section>
+  <div class="tag"><span>10 — Getting it online</span><i></i></div>
+  <h2>A repository, and a free web address</h2>
+  <p class="intro">The code lives in a <b>GitHub repository</b> — an online folder that remembers
+    every version. <b>GitHub Pages</b> serves those files as a real website, free. Every time a
+    change is pushed, the site rebuilds itself in about a minute. That is what <em>deploying</em>
+    means.</p>
+  <p style="margin-top:20px">No server runs the code. GitHub simply hands the browser the HTML,
+    CSS and JavaScript, and everything happens on your machine from there.</p>
+</section>
+
+<!-- ================================ BRIEF ================================ -->
+<section>
+  <div class="tag"><span>11 — Against the brief</span><i></i></div>
+  <h2>The three things the assignment asked for</h2>
+  <table>
+    <tr><th>Requirement</th><th>Where it lives in Lockin</th></tr>
+    <tr><td>Get something from the internet</td><td>Weather and geocoding from Open-Meteo; the word of the day from DictionaryAPI, falling back to Wiktionary</td></tr>
+    <tr><td>Remember something</td><td>localStorage — close the tab, come back tomorrow, the history and streak are still there</td></tr>
+    <tr><td>Do something because time has passed</td><td>The countdown, breaks, reminders that fire when due, rooms that start themselves, and day-by-day streaks</td></tr>
+  </table>
+</section>
+
+<!-- ================================ QUESTIONS ================================ -->
+<section>
+  <div class="tag"><span>12 — Likely questions</span><i></i></div>
+  <h2>Answers worth having ready</h2>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>“Why no framework?”</h3>
+      <p>The brief required plain HTML, CSS and JavaScript — and the app doesn't need one. It is a
+        single page with no complex shared state.</p>
+    </div>
+    <div class="card">
+      <h3>“Where is your API key?”</h3>
+      <p>There isn't one, deliberately. With no backend, a key would sit in the JavaScript where
+        anyone could read it by pressing F12.</p>
+    </div>
+    <div class="card">
+      <h3>“Is it secure?”</h3>
+      <p>There is nothing to attack — no login, no server, no database, no keys. The one caution is
+        the live study link, which contains a network address so two browsers can find each other;
+        the app labels it and says to send it only to your partner.</p>
+    </div>
+    <div class="card">
+      <h3>“Isn't the duel a backend?”</h3>
+      <p>No. The timer is arithmetic on a timestamp in a URL, and the live stats go straight from
+        one browser to the other. No server of mine is involved at any point.</p>
+    </div>
+    <div class="card">
+      <h3>“What doesn't work everywhere?”</h3>
+      <p>Voice needs Chrome or Edge — Firefox has no speech recognition at all. The app detects
+        this and says so, and a typed command box works in every browser.</p>
+    </div>
+    <div class="card">
+      <h3>“What was hardest?”</h3>
+      <p>Study Together: getting two browsers to talk with no server, and squeezing a
+        2,000-character connection description into a link short enough to send.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  Lockin — <a href="https://navneetges-wq.github.io/study-buddy/">navneetges-wq.github.io/study-buddy</a>
+  · HTML, CSS and JavaScript only · no framework, no backend, no API keys.
+</footer>
+
+</div>
+</body>
+</html>
