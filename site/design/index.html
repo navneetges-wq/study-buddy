@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lockin — Branding &amp; Promotional Design</title>
+<meta name="description" content="Visual identity kit for Lockin: app logo, A4 promotional flyer, 1200×700 blog banner, and the process behind them.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M48.3 16.97 A22 22 0 1 1 15.7 16.97' fill='none' stroke='%23e8eaf0' stroke-width='15' stroke-linecap='round'/><circle cx='32' cy='9.75' r='7' fill='%237c8cff' stroke='none'/></svg>">
+<meta name="theme-color" content="#0b0d11">
+<style>
+@font-face{font-family:'Eczar';src:url(assets/eczar-bold.woff2) format('woff2');
+  font-weight:700;font-style:normal;font-display:swap}
+:root{
+  --bg:#0b0d11; --surface:#12151b; --surface2:#171b22;
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.15);
+  --text:#e8eaf0; --dim:#98a0ae; --faint:#69707e; --accent:#7c8cff;
+  --good:#5ec9a0; --bad:#e07b7b; --r:14px;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Helvetica Neue",Inter,Roboto,sans-serif;
+  --ecz:'Eczar',Georgia,serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 var(--sans);
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1020px;margin:0 auto;padding:0 26px}
+a{color:var(--accent)}
+img{display:block;max-width:100%}
+
+/* ---------- masthead ---------- */
+.mast{padding:76px 0 46px;border-bottom:1px solid var(--line)}
+.mast .logo{height:46px;width:auto;margin-bottom:34px}
+.mast h1{font:700 62px/1.04 var(--ecz);letter-spacing:-.02em;margin:0 0 18px}
+.mast .sub{color:var(--dim);font-size:19px;line-height:1.55;max-width:60ch;margin:0}
+.mast .meta{display:flex;gap:26px;flex-wrap:wrap;margin-top:30px;
+  color:var(--faint);font-size:13px}
+.mast .meta b{color:var(--text);font-weight:600;display:block;font-size:14px}
+
+/* ---------- section scaffolding ---------- */
+section{padding:66px 0;border-bottom:1px solid var(--line)}
+.tag{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+.tag i{width:9px;height:9px;background:var(--accent);border-radius:2px;display:block}
+.tag span{color:var(--accent);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+  font-weight:600}
+h2{font:700 40px/1.12 var(--ecz);letter-spacing:-.018em;margin:0 0 14px}
+h3{font-size:17px;font-weight:600;letter-spacing:-.012em;margin:34px 0 12px}
+.intro{color:var(--dim);font-size:17px;line-height:1.6;max-width:70ch;margin:0}
+p{color:var(--dim);line-height:1.62}
+.note{color:var(--faint);font-size:13.5px;line-height:1.5;margin:9px 0 0}
+
+/* ---------- pieces ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:26px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center}
+.tile.lite{background:#f4f5f8;border-color:#e3e6ec}
+.tile.acc{background:#7c8cff;border-color:#7c8cff}
+.cap{color:var(--faint);font-size:11px;letter-spacing:.09em;text-transform:uppercase}
+.tile.lite .cap{color:#7b818f}.tile.acc .cap{color:rgba(255,255,255,.8)}
+.tile h4{margin:0;font-size:15px;font-weight:600}
+.tile p{margin:0;font-size:13.5px;color:var(--dim);line-height:1.5}
+.tile.lite p{color:#5c6270}
+
+figure{margin:0}
+figure img{border-radius:10px;border:1px solid var(--line)}
+figcaption{color:var(--faint);font-size:13px;line-height:1.5;margin-top:10px}
+figcaption b{color:var(--text);font-weight:600}
+
+table{width:100%;border-collapse:collapse;font-size:14.5px;margin-top:6px}
+th{text-align:left;color:var(--faint);font-size:11px;letter-spacing:.09em;
+  text-transform:uppercase;font-weight:600;padding:0 14px 10px 0;border-bottom:1px solid var(--line)}
+td{padding:13px 14px 13px 0;border-bottom:1px solid var(--line);color:var(--dim);
+  vertical-align:top;line-height:1.5}
+td:first-child{color:var(--text);font-weight:600;white-space:nowrap}
+td code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:var(--text)}
+.yes{color:var(--good)}
+
+.swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.sw{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.sw .chip{height:72px}
+.sw .meta{padding:12px 14px;background:var(--surface)}
+.sw b{display:block;font-size:13.5px}
+.sw code{color:var(--faint);font-size:11.5px}
+
+.modes{display:flex;gap:12px;flex-wrap:wrap}
+.mode{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:18px 20px;display:flex;flex-direction:column;align-items:center;gap:11px;min-width:104px}
+.mode img{height:44px}
+
+.sizes{display:flex;align-items:flex-end;gap:34px;flex-wrap:wrap}
+.sz{display:flex;flex-direction:column;align-items:center;gap:10px}
+
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);
+  border-radius:var(--r);overflow:hidden}
+.ba>div{padding:20px 22px}
+.ba>div:first-child{border-right:1px solid var(--line);background:rgba(224,123,123,.05)}
+.ba>div:last-child{background:rgba(94,201,160,.05)}
+.ba .lab{font-size:11px;letter-spacing:.09em;text-transform:uppercase;font-weight:600;
+  margin-bottom:8px}
+.ba .before .lab{color:var(--bad)}.ba .after .lab{color:var(--good)}
+.ba p{margin:0;font-size:14px;color:var(--dim)}
+
+.fix{border-left:2px solid var(--line2);padding:2px 0 2px 20px;margin:0 0 26px}
+.fix h4{margin:0 0 6px;font-size:15.5px;font-weight:600;color:var(--text)}
+.fix p{margin:0;font-size:14.5px}
+
+footer{padding:50px 0 80px;color:var(--faint);font-size:13.5px}
+footer a{color:var(--accent)}
+
+@media(max-width:820px){
+  .grid2,.grid3,.grid4,.swatches,.ba{grid-template-columns:1fr}
+  .mast h1{font-size:44px} h2{font-size:31px}
+  .ba>div:first-child{border-right:0;border-bottom:1px solid var(--line)}
+}
+</style>
+</head>
+<body>
+
+<!-- ================================ MASTHEAD ================================ -->
+<div class="wrap">
+<header class="mast">
+  <img class="logo" src="assets/lockin-lockup-dark.svg" alt="Lockin">
+  <h1>Branding &amp;<br>Promotional Design</h1>
+  <p class="sub">A visual identity kit for <b style="color:var(--text)">Lockin</b> — a
+    distraction-aware study companion. One logo, three A4 flyers, three blog banners, and
+    the reasoning that got there.</p>
+  <div class="meta">
+    <div><b>The app</b><a href="https://navneetges-wq.github.io/study-buddy/">navneetges-wq.github.io/study-buddy</a></div>
+    <div><b>Type</b>Eczar Bold, converted to outlines</div>
+    <div><b>Accent</b><span class="mono">#7C8CFF</span></div>
+    <div><b>Tools</b>Illustrator-compatible SVG, Photoshop, CMYK/PDF-X</div>
+  </div>
+</header>
+
+<!-- ================================ THE PRODUCT ============================= -->
+<section>
+  <div class="tag"><i></i><span>01 · The product</span></div>
+  <h2>What the brand has to carry</h2>
+  <p class="intro">Lockin is a study timer that never asks what you're working on. It
+    watches how you work, counts every time you leave the tab, and when a session ends it
+    doesn't say “done” — it reports what actually happened: planned versus actual focus,
+    tab switches, time distracted, a focus score.</p>
+  <div class="grid3" style="margin-top:28px">
+    <div class="card"><h4 style="margin:0 0 7px;font-size:15px">Who it's for</h4>
+      <p style="margin:0;font-size:14px">Students who sit down to study and lose two hours.
+        The brand has to feel honest rather than cheerful.</p></div>
+    <div class="card"><h4 style="margin:0 0 7px;font-size:15px">Where it lives</h4>
+      <p style="margin:0;font-size:14px">A dark interface, one accent colour, hairline
+        borders. The identity had to be native to that, not applied on top.</p></div>
+    <div class="card"><h4 style="margin:0 0 7px;font-size:15px">The constraint</h4>
+      <p style="margin:0;font-size:14px">The app already had two fragments — a plain ring
+        favicon and a 10px accent dot. The mark had to make them mean something.</p></div>
+  </div>
+</section>
+
+<!-- ================================ TASK 1 ================================== -->
+<section>
+  <div class="tag"><i></i><span>02 · Task 1 — the app logo</span></div>
+  <h2>A ring left open, and the dot that closes it</h2>
+  <p class="intro">Four directions were drawn and tested at 112px, 40px and 20px before one
+    was chosen. The winner wasn't the cleverest — it was the one the app already implied.</p>
+
+  <h3>The four directions</h3>
+  <div class="grid4">
+    <div class="tile"><svg width="86" height="86" viewBox="0 0 64 64" fill="none" stroke="#e8eaf0" stroke-linecap="round">
+      <circle cx="32" cy="32" r="22" stroke-width="5.5"/>
+      <circle cx="32" cy="27" r="5.2" fill="#7c8cff" stroke="none"/>
+      <path d="M29.8 29.5 L27.9 42 h8.2 L34.2 29.5 Z" fill="#7c8cff" stroke="none"/></svg>
+      <h4>Keyhole</h4><p>The lock inside the dial. Most presence, but leans on the padlock pun.</p>
+      <span class="cap">explored</span></div>
+    <div class="tile" style="border-color:var(--accent)"><svg width="86" height="86" viewBox="0 0 64 64" fill="none" stroke="#e8eaf0" stroke-linecap="round">
+      <path d="M41.53 13.29 A21 21 0 1 1 22.47 13.29" stroke-width="6"/>
+      <circle cx="32" cy="13.29" r="4.6" fill="#7c8cff" stroke="none"/></svg>
+      <h4>Locked In</h4><p>The ring opens; the dot is the piece that closes it. Survives 16px best.</p>
+      <span class="cap" style="color:var(--accent)">chosen</span></div>
+    <div class="tile"><svg width="86" height="86" viewBox="0 0 64 64" fill="none" stroke="#e8eaf0" stroke-width="5" stroke-linecap="round">
+      <path d="M12 24 V18 A6 6 0 0 1 18 12 H24"/><path d="M40 12 H46 A6 6 0 0 1 52 18 V24"/>
+      <path d="M52 40 V46 A6 6 0 0 1 46 52 H40"/><path d="M24 52 H18 A6 6 0 0 1 12 46 V40"/>
+      <circle cx="32" cy="32" r="5.5" fill="#7c8cff" stroke="none"/></svg>
+      <h4>Reticle</h4><p>Locking <em>on</em>, not locking up. Reads as a scanner icon.</p>
+      <span class="cap">explored</span></div>
+    <div class="tile"><svg width="86" height="86" viewBox="0 0 64 64" fill="none" stroke="#e8eaf0" stroke-linecap="round">
+      <path d="M23 26.5 V20.5 a9 9 0 0 1 18 0 V26.5" stroke-width="5"/>
+      <rect x="14" y="26.5" width="36" height="26" rx="8" stroke-width="5"/>
+      <path d="M32 36 V43" stroke-width="4.5" stroke="#7c8cff"/></svg>
+      <h4>Latch</h4><p>A literal padlock in the app's card geometry. Clearest, most generic.</p>
+      <span class="cap">explored</span></div>
+  </div>
+  <p class="note">A fifth direction — a padlock whose body was the circular dial — was drawn
+    and cut: a round body under a narrow shackle reads as a lightbulb, not a lock.</p>
+
+  <h3>Why this one</h3>
+  <div class="grid2">
+    <div class="card">
+      <p style="margin:0">“Lockin” means <b style="color:var(--text)">focus</b>, not security.
+      Two of the four directions leaned on a padlock, which would have cast a study app as a
+      VPN or a password manager. The chosen mark says nothing about locks — it says a session
+      is open, and one piece completes it.</p>
+    </div>
+    <div class="card">
+      <p style="margin:0">It also costs nothing to adopt. The app already shipped a ring and
+      an accent dot that had no relationship to each other. This mark is those two elements
+      doing one job, so it reads as the app rather than as new decoration.</p>
+    </div>
+  </div>
+
+  <h3>The mark, and how the gap is set</h3>
+  <div class="grid2">
+    <div class="tile"><img src="assets/lockin-icon.svg" alt="Lockin mark" style="height:150px">
+      <span class="cap">the mark</span></div>
+    <div class="card">
+      <p style="margin:0 0 12px"><b style="color:var(--text)">The gap is solved, not
+        eyeballed.</b> Its chord is derived from the dot outward — wide enough to clear both
+        round caps, the dot itself, and a set margin of air either side. Change the dot and
+        the gap re-solves.</p>
+      <p style="margin:0 0 12px">The dot is deliberately <b style="color:var(--text)">wider
+        than the stroke</b>. That is what stops it reading as the head of a loading spinner
+        and makes it read as a separate piece dropping into place.</p>
+      <p style="margin:0">The ring's stroke is 28% of its own diameter, tuned up from a
+        lighter first cut so it carries the same weight as Eczar's bold stems.</p>
+    </div>
+  </div>
+
+  <h3>The wordmark</h3>
+  <p class="intro" style="font-size:15.5px">LOCKIN is set in <b style="color:var(--text)">Eczar
+    Bold</b> (weight 700, v2.000) by Vaibhav Singh at Rosetta Type Foundry, under the SIL
+    Open Font License. Caps, tracked 40/1000 em. In every delivered file the letters are
+    <b style="color:var(--text)">converted to outlines</b>, so the artwork never depends on
+    the font being installed.</p>
+
+  <h3>Lockups</h3>
+  <div class="grid2">
+    <div class="tile"><img src="assets/lockin-lockup-dark.svg" alt="Primary lockup" style="width:82%">
+      <span class="cap">primary · on dark</span></div>
+    <div class="tile lite"><img src="assets/lockin-lockup-light.svg" alt="Lockup on light" style="width:82%">
+      <span class="cap">on light</span></div>
+    <div class="tile acc"><img src="assets/lockin-lockup-white.svg" alt="One-colour reverse" style="width:82%">
+      <span class="cap">one-colour reverse</span></div>
+    <div class="tile lite"><img src="assets/lockin-lockup-black.svg" alt="One-colour print" style="width:82%">
+      <span class="cap">one-colour · print</span></div>
+  </div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="tile"><img src="assets/lockin-lockup-o-dark.svg" alt="Mark as the O" style="width:74%">
+      <span class="cap">alternative — the mark is the O</span></div>
+    <div class="card"><p style="margin:0">The alternative lockup drops the mark into the word
+      and becomes the letter, which removes the two-circle repetition of the primary. Tighter
+      and more distinctive, but it needs size — below 150px wide the gap and the dot start to
+      merge, so the primary stays the default.</p></div>
+  </div>
+
+  <h3>It holds from a poster down to a favicon</h3>
+  <div class="card">
+    <div class="sizes">
+      <div class="sz"><img src="assets/lockin-icon.svg" style="height:104px" alt=""><span class="cap">112</span></div>
+      <div class="sz"><img src="assets/lockin-icon.svg" style="height:64px" alt=""><span class="cap">64</span></div>
+      <div class="sz"><img src="assets/lockin-favicon.svg" style="height:64px" alt=""><span class="cap">favicon cut</span></div>
+      <div class="sz"><img src="assets/lockin-icon-32.png" style="height:32px" alt=""><span class="cap">32</span></div>
+      <div class="sz"><img src="assets/lockin-icon-16.png" style="height:16px" alt=""><span class="cap">16</span></div>
+    </div>
+    <p class="note">Below 48px the mark switches to a separate <b>favicon cut</b> — stroke up
+      to 34% of diameter, dot enlarged, margins tightened. A scaled-down primary mark turns
+      to mush at that size; this doesn't.</p>
+  </div>
+
+  <h3>The logo re-tints itself</h3>
+  <p class="intro" style="font-size:15.5px">The app already shifts its accent with the weather
+    where you are. The mark follows it — and it's the only part of the brand that changes
+    colour, only ever to an accent the app is already using.</p>
+  <div class="modes">
+    <div class="mode"><img src="assets/lockin-icon.svg" alt=""><span class="cap">default</span></div>
+    <div class="mode"><img src="assets/lockin-icon-mode-rain.svg" alt=""><span class="cap">rain</span></div>
+    <div class="mode"><img src="assets/lockin-icon-mode-night.svg" alt=""><span class="cap">night</span></div>
+    <div class="mode"><img src="assets/lockin-icon-mode-clear.svg" alt=""><span class="cap">clear</span></div>
+    <div class="mode"><img src="assets/lockin-icon-mode-snow.svg" alt=""><span class="cap">snow</span></div>
+    <div class="mode"><img src="assets/lockin-icon-mode-cloud.svg" alt=""><span class="cap">cloud</span></div>
+  </div>
+
+  <h3>Colour</h3>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#7c8cff"></div>
+      <div class="meta"><b>Accent — the dot</b><code>#7C8CFF</code></div></div>
+    <div class="sw"><div class="chip" style="background:#e8eaf0"></div>
+      <div class="meta"><b>Ink on dark</b><code>#E8EAF0</code></div></div>
+    <div class="sw"><div class="chip" style="background:#12151b;border-bottom:1px solid var(--line)"></div>
+      <div class="meta"><b>Ink on light</b><code>#12151B</code></div></div>
+    <div class="sw"><div class="chip" style="background:#0b0d11;border-bottom:1px solid var(--line)"></div>
+      <div class="meta"><b>Canvas</b><code>#0B0D11</code></div></div>
+  </div>
+  <p class="note">Clear space: one dot diameter on all four sides. Minimum sizes: primary
+    lockup 120px wide, O-lockup 150px, mark 16px using the favicon cut. The gap never rotates
+    off twelve o'clock, and the dot never travels around the ring.</p>
+</section>
+
+<!-- ================================ TASK 2 ================================== -->
+<section>
+  <div class="tag"><i></i><span>03 · Task 2 — the A4 flyer</span></div>
+  <h2>Three flyers, one campaign system</h2>
+  <p class="intro">Rather than one poster, three — each leading on a different hook, built
+    from a single skeleton so they read as a family. A4, CMYK, 300 dpi, with a vector PDF for
+    the printer and a real CMYK TIFF alongside it.</p>
+
+  <div class="grid3" style="margin-top:28px">
+    <figure><img src="assets/flyer-01-autopsy.jpg" alt="Flyer — it counts every time you looked away">
+      <figcaption><b>01 · The autopsy.</b> “It counts every time you looked away.” The session
+        report is the hero — a dial would have said <em>time's up</em>, which is the thing the
+        headline argues against.</figcaption></figure>
+    <figure><img src="assets/flyer-02-duel.jpg" alt="Flyer — one link, two timers, one winner">
+      <figcaption><b>02 · The duel.</b> “One link. Two timers. One winner.” Head-to-head card,
+        with the red dot carrying the whole idea that your partner just left their tab.</figcaption></figure>
+    <figure><img src="assets/flyer-03-handsfree.jpg" alt="Flyer — 22 commands, no keyboard">
+      <figcaption><b>03 · Hands-free.</b> “22 commands. No keyboard.” The voice command list is
+        the visual; a live exchange demonstrates it rather than describing it.</figcaption></figure>
+  </div>
+
+  <h3>Against the brief</h3>
+  <table>
+    <tr><th>The brief asks for</th><th>On the flyer</th></tr>
+    <tr><td>App logo and name</td><td><span class="yes">✓</span> Top left, with the kicker “Focus companion · Web app”</td></tr>
+    <tr><td>Headline / tagline</td><td><span class="yes">✓</span> Eczar Bold, two lines, plus a deck that strikes through the competing claim</td></tr>
+    <tr><td>Key features or benefits</td><td><span class="yes">✓</span> A four-item grid, plus a second hook shown as a live band rather than a bullet</td></tr>
+    <tr><td>Suitable visuals</td><td><span class="yes">✓</span> The product's own interface — session report, duel panel, command list — never stock imagery</td></tr>
+    <tr><td>Call to action</td><td><span class="yes">✓</span> “Start your first session.”, the address, and a vector QR code to the live app</td></tr>
+    <tr><td>Size &amp; colour mode</td><td><span class="yes">✓</span> A4 at 300 dpi · <span class="mono">2481×3509</span> · genuine CMYK TIFF, plus a vector PDF</td></tr>
+  </table>
+
+  <h3>Notes for the printer</h3>
+  <div class="grid2">
+    <div class="card"><p style="margin:0"><b style="color:var(--text)">The accent shifts in
+      CMYK.</b> <span class="mono">#7C8CFF</span> is a saturated blue-violet outside the CMYK
+      gamut, so the converted files read slightly duller than screen. That is inherent to
+      print, not a conversion fault — if the press wants FOGRA or SWOP, reconvert from the RGB
+      master with their profile.</p></div>
+    <div class="card"><p style="margin:0"><b style="color:var(--text)">The flyers are dark,
+      edge to edge.</b> That's the brand, but it is heavy ink coverage; on cheap digital
+      presses large dark fields can band or scuff. Worth a conversation with the shop before
+      a long run.</p></div>
+  </div>
+</section>
+
+<!-- ================================ TASK 3 ================================== -->
+<section>
+  <div class="tag"><i></i><span>04 · Task 3 — the blog banner</span></div>
+  <h2>1200 × 700, and it has a different job</h2>
+  <p class="intro">The banner is not a shrunk flyer. It's seen small, in a feed, next to
+    other things competing for the same click — so it carries a few big words and one idea,
+    at a size that still reads in a card.</p>
+
+  <div style="display:flex;flex-direction:column;gap:22px;margin-top:28px">
+    <figure><img src="assets/banner-01-autopsy.jpg" alt="Banner — it counts every time you looked away">
+      <figcaption><b>01 · The autopsy.</b> Headline left, session report right. The spoken
+        reply in the hands-free band quotes the same numbers the card shows — the two hooks
+        corroborate each other instead of competing.</figcaption></figure>
+    <figure><img src="assets/banner-02-duel.jpg" alt="Banner — one link, two timers, one winner">
+      <figcaption><b>02 · The duel.</b> The nudge band replaces the voice band; the card
+        becomes the live head-to-head.</figcaption></figure>
+    <figure><img src="assets/banner-03-handsfree.jpg" alt="Banner — 22 commands, no keyboard">
+      <figcaption><b>03 · Hands-free.</b> Shortest headline of the three, so the type runs
+        largest.</figcaption></figure>
+  </div>
+
+  <h3>Why it isn't the flyer, scaled</h3>
+  <table>
+    <tr><th></th><th>A4 flyer</th><th>Blog banner</th></tr>
+    <tr><td>Held at</td><td>Arm's length, in the hand</td><td>Seen at 300–600px in a feed</td></tr>
+    <tr><td>Reading time</td><td>Seconds to a minute</td><td>Under a second</td></tr>
+    <tr><td>Word count</td><td>~130 words, skim layer and read layer</td><td>A headline, a deck, four chips</td></tr>
+    <tr><td>Colour mode</td><td>CMYK, 300 dpi, print</td><td>RGB, 72 dpi, screen</td></tr>
+    <tr><td>Call to action</td><td>QR code and printed address</td><td>The whole image is the link</td></tr>
+  </table>
+</section>
+
+<!-- ================================ PROCESS ================================= -->
+<section>
+  <div class="tag"><i></i><span>05 · Process</span></div>
+  <h2>What the first attempt got wrong</h2>
+  <p class="intro">The brief asks not to accept the first answer. These are the changes that
+    actually altered the work — each one caught by looking at the result or measuring it,
+    not by taste.</p>
+
+  <h3>The logo</h3>
+  <div class="ba" style="margin-bottom:26px">
+    <div class="before"><div class="lab">First attempt</div>
+      <p>A padlock whose body was the circular focus dial. Rendered at 112px it read as a
+        lightbulb: a round body under a narrow shackle tapers into a bulb silhouette.
+        Widening the shackle didn't fix it.</p></div>
+    <div class="after"><div class="lab">Changed to</div>
+      <p>The direction was cut entirely and replaced with <b style="color:var(--text)">Keyhole</b>
+        — the lock inside the dial rather than beside it — which then lost to
+        <b style="color:var(--text)">Locked In</b> on the padlock-pun argument.</p></div>
+  </div>
+
+  <div class="fix">
+    <h4>The solid disc measured identical and still looked wrong</h4>
+    <p>In an early wordmark the “o” was a filled disc. It measured exactly 38 units tall, the
+      same as the “c” beside it — and still read visibly smaller. Solid shapes always look
+      smaller than outlines of equal diameter, so it needed 1.6 units of optical overshoot.
+      The measurement was right; the eye was the thing to trust.</p>
+  </div>
+  <div class="fix">
+    <h4>The strike-through was measured against the wrong line</h4>
+    <p>“Most timers tell you <s>time's up</s>.” sets over two lines. The rule was being sized
+      from the width of line one and drawn through line two, so it overshot by a third.
+      Re-measured against its own line.</p>
+  </div>
+  <div class="fix">
+    <h4>The flyer overflowed A4 by 309 pixels</h4>
+    <p>The entire footer — QR code, address, call to action — was off the page, and it was not
+      visible in a browser without measuring. The headline was cut from three lines to two,
+      the report card and grid tightened, and the page now measures
+      <span class="mono">1123px content against a 1123px page</span>.</p>
+  </div>
+  <div class="fix">
+    <h4>The print PDF silently lost its background</h4>
+    <p>Chrome drops background colours when printing to PDF unless told otherwise, so the
+      first vector A4 came out white. Fixed with <span class="mono">print-color-adjust: exact</span>,
+      and verified by rasterising the finished PDF and looking at it rather than trusting the
+      export.</p>
+  </div>
+  <div class="fix">
+    <h4>The ring vanished inside the O-lockup</h4>
+    <p>When the mark was dropped into the wordmark it sat inside a fill-only group carrying
+      <span class="mono">stroke="none"</span>, so the ring inherited its way out of existence
+      and only the dot rendered. The stroke is now set explicitly on the path rather than
+      inherited.</p>
+  </div>
+  <div class="fix">
+    <h4>A headline lost a word to the gutter</h4>
+    <p>Widening the report card by 24px left the banner headline 2px short of the space it
+      needed, orphaning “TIME” onto a third line. Caught by measuring the rendered text width
+      against the available column rather than eyeballing the layout.</p>
+  </div>
+
+  <h3>Kept on purpose</h3>
+  <div class="grid2">
+    <div class="card"><h4 style="margin:0 0 7px;font-size:15px">No mascot</h4>
+      <p style="margin:0;font-size:14px">A character was considered and rejected. The mark is
+        already one: a loose dot is distraction, a dot in the gap is focus. That carries the
+        idea without a new asset to draw and maintain.</p></div>
+    <div class="card"><h4 style="margin:0 0 7px;font-size:15px">The dot never orbits</h4>
+      <p style="margin:0;font-size:14px">It would be the obvious animation, and it would turn
+        the logo into a loading spinner — which the app already has. The guideline forbids it,
+        and the preloader's spinning ring was removed to honour it.</p></div>
+  </div>
+</section>
+
+<!-- ================================ FILES ================================== -->
+<section style="border-bottom:0">
+  <div class="tag"><i></i><span>06 · Deliverables</span></div>
+  <h2>Editable working files and final exports</h2>
+  <table>
+    <tr><th>File</th><th>Format</th><th>For</th></tr>
+    <tr><td>lockin-lockup-dark / light / white / black</td><td>SVG</td><td>Primary logotype — editable vector, opens in Illustrator, places in Photoshop as a vector smart object</td></tr>
+    <tr><td>lockin-lockup-o-*</td><td>SVG</td><td>Alternative lockup, the mark as the O</td></tr>
+    <tr><td>lockin-icon · lockin-favicon</td><td>SVG</td><td>Square mark, and the heavier cut for 16–48px</td></tr>
+    <tr><td>lockin-*-mode-{rain,night,clear,snow,cloud}</td><td>SVG</td><td>Focus-mode accent variants</td></tr>
+    <tr><td>lockin-icon-{16…1024}</td><td>PNG, alpha</td><td>Favicons, app icons, store listings</td></tr>
+    <tr><td>lockin-flyer-{01,02,03}-A4</td><td>PDF, vector</td><td><b>Send to the printer</b> — true A4, type stays vector</td></tr>
+    <tr><td>lockin-flyer-{01,02,03}-A4-CMYK-300dpi</td><td>TIFF, CMYK</td><td>The brief's CMYK print requirement, 2481×3509</td></tr>
+    <tr><td>lockin-flyer-{01,02,03}-A4-300dpi</td><td>PNG, RGB</td><td>Screen, slides, submission</td></tr>
+    <tr><td>lockin-banner-{01,02,03}-1200x700</td><td>PNG, RGB</td><td>The banner as specified, plus a 2× retina cut</td></tr>
+    <tr><td>build.py · typeset.py · layout.py</td><td>source</td><td>Parametric generators — one type grid, one page skeleton; every asset regenerates from them</td></tr>
+    <tr><td>Eczar-Bold.ttf · OFL.txt</td><td>font</td><td>The instanced Bold weight and its licence</td></tr>
+  </table>
+  <p class="note" style="margin-top:20px">Every SVG is true editable vector with the
+    letterforms converted to outlines. Nothing in the kit depends on a font being installed,
+    and nothing was drawn by hand twice — the generators hold the type grid, so kerning,
+    stroke weight and the gap geometry are edited in one place.</p>
+</section>
+
+<footer>
+  <p>Lockin — <a href="https://navneetges-wq.github.io/study-buddy/">navneetges-wq.github.io/study-buddy</a>
+    · <a href="../../about.html">what the app does</a></p>
+  <p style="margin-top:6px">Eczar by Vaibhav Singh, Rosetta Type Foundry, under the SIL Open Font License.</p>
+</footer>
+</div>
+</body>
+</html>
