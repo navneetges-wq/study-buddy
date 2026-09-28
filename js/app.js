@@ -128,7 +128,6 @@ function startFocus(minutes, kind, planId) {
   }
   if (planId) Store.setPlanned(planId, { status: 'started' });
   zenOff = false;                      // every new session opens in full-screen focus
-  dismissExpandHint();                 // they got started; stop pointing at the icon
   renderTimer(); renderPlanLists();
 }
 
@@ -261,13 +260,16 @@ function leaveZen() { zenOff = false; syncZen(); }
 /* The landing is full-screen focus, so the way back to the rest of the app
    is one small icon. Point at it until the user has either used it or
    started a session — then never again. */
+/* Shown on the landing until the user has actually opened the rest of the
+   app. A running session hides it (you're focusing), but finishing brings it
+   back — only using the button retires it, because using it is the point. */
 function renderExpandHint() {
-  const show = !Store.state.settings.expandSeen && !A && !brk && !zenOff;
+  const show = !Store.state.settings.expandUsed && !A && !brk && !zenOff;
   document.body.classList.toggle('hint-expand', show);
 }
 function dismissExpandHint() {
-  if (Store.state.settings.expandSeen) return;
-  Store.set('expandSeen', true);
+  if (Store.state.settings.expandUsed) return;
+  Store.set('expandUsed', true);
   renderExpandHint();
 }
 
