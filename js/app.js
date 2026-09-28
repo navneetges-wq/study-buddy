@@ -260,16 +260,20 @@ function leaveZen() { zenOff = false; syncZen(); }
 /* The landing is full-screen focus, so the way back to the rest of the app
    is one small icon. Point at it until the user has either used it or
    started a session — then never again. */
-/* Shown on the landing until the user has actually opened the rest of the
-   app. A running session hides it (you're focusing), but finishing brings it
-   back — only using the button retires it, because using it is the point. */
+/* Shown on the landing every fresh visit, because "at first glance" means
+   the first glance of this visit — not once in the app's lifetime. A running
+   session hides it; clicking the button quiets it for the rest of this visit.
+   The flag lives in sessionStorage, so it can never get permanently stuck. */
+const hintUsed = {
+  get() { try { return sessionStorage.getItem('lockin.expandUsed') === '1'; } catch (e) { return false; } },
+  set() { try { sessionStorage.setItem('lockin.expandUsed', '1'); } catch (e) {} }
+};
 function renderExpandHint() {
-  const show = !Store.state.settings.expandUsed && !A && !brk && !zenOff;
+  const show = !hintUsed.get() && !A && !brk && !zenOff;
   document.body.classList.toggle('hint-expand', show);
 }
 function dismissExpandHint() {
-  if (Store.state.settings.expandUsed) return;
-  Store.set('expandUsed', true);
+  hintUsed.set();
   renderExpandHint();
 }
 
