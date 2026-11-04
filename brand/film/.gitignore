@@ -1,0 +1,10 @@
+# rebuildable outputs
+frames/
+test_*.jpg
+sheet.jpg
+cues.json
+render.log
+audio.wav
+audio.m4a
+*.mp4
+encode
