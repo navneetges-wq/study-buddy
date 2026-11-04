@@ -436,7 +436,7 @@ body.focus-mode #focus-title{display:none}          /* the logo is the title her
 
 body.focus-mode .wotd{margin-left:auto;margin-right:auto;text-align:center;border-top:0;
   border-top:1px solid var(--line);padding-top:20px;margin-top:30px}
-body.focus-mode:not(.idle-focus) .wotd{display:none}   /* not while the clock runs */
+body.focus-mode .wotd{display:none}   /* the landing stays clean — the word appears after “More” */
 
 /* the idle landing breathes more than a running session does */
 body.idle-focus .focus-card{padding-top:56px}
@@ -499,3 +499,82 @@ body.hint-expand #focus-expand{
 @media(prefers-reduced-motion:reduce){
   body.hint-expand #focus-expand{animation:none}
 }
+
+/* ============================ polish: glass, light, motion ============================
+   Same calm layout, more depth: Manrope, a soft accent light behind everything, glass cards,
+   glowing primary buttons and dial, pill tabs. hover.js adds the cursor light to buttons. */
+body{font-family:"Manrope",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif}
+body::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(44vw 38vw at 6% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+    radial-gradient(36vw 32vw at 96% 14%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
+    radial-gradient(44vw 40vw at 70% 100%, rgba(94,201,160,.05), transparent 70%);
+}
+.k{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.1em}
+.pill{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:10.5px}
+
+.card,.quick{
+  background:linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018));
+  border-color:rgba(255,255,255,.08);border-radius:18px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 18px 48px rgba(0,0,0,.28);
+}
+.item,.rival,.duel-side,.ach{border-radius:12px;background:rgba(255,255,255,.03)}
+.live,.stat-grid,.fp-grid,.partner-stats,.room-grid,.autopsy-grid{border-radius:12px}
+.live>div,.stat,.fp,.partner-stats>div,.room-grid>div,.ap{background:#10131a}
+
+/* tabs: a quiet pill bar */
+.tabs{gap:4px}
+.tab{border:0;border-radius:10px;padding:8px 14px;font-weight:600;transition:color .2s, background .2s}
+.tab:hover{background:rgba(255,255,255,.04)}
+.tab.is-active{background:var(--accent-soft);color:var(--text);box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent)}
+.chip{border-radius:10px}
+
+/* buttons: gradient + gloss, a light spot under the cursor, a gentle magnetic lean (hover.js) */
+.btn{position:relative;isolation:isolate;border-radius:11px;font-weight:600;
+  transform:translate(var(--tx,0),var(--ty,0)) scale(var(--s,1));
+  transition:transform .45s cubic-bezier(.2,.9,.25,1.25), box-shadow .3s ease, border-color .2s, background-color .2s}
+.btn::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s;
+  background:radial-gradient(80px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,.22), transparent 65%)}
+.btn.is-hot{--s:1.04}
+.btn.is-hot::after{opacity:1}
+.btn.primary{
+  background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 55%, #fff) 0%, var(--accent) 55%, color-mix(in srgb, var(--accent) 80%, #000) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45), 0 8px 22px color-mix(in srgb, var(--accent) 32%, transparent);
+}
+.btn.primary:hover{filter:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.5), 0 12px 30px color-mix(in srgb, var(--accent) 45%, transparent)}
+.btn.primary::after{background:radial-gradient(90px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,.55), transparent 65%)}
+#btn-start{padding:12px 24px;font-size:15px}
+
+.dur,.dchip,.schip,.mchip{border-radius:10px;transition:border-color .2s, color .2s, background .2s, transform .2s}
+.dur:hover,.schip:hover,.mchip:hover{border-color:var(--line-strong);color:var(--text)}
+.dur.is-on,.schip.is-on,.mchip.is-on{box-shadow:0 0 16px color-mix(in srgb, var(--accent) 22%, transparent)}
+.dchip:active,.dur:active{transform:scale(.96)}
+input[type=number],input[type=datetime-local],input[type=text],textarea{border-radius:10px;background:rgba(0,0,0,.25)}
+
+/* the dial glows in the accent colour and breathes softly while the clock runs */
+.dial{filter:drop-shadow(0 0 14px color-mix(in srgb, var(--accent) 30%, transparent))}
+.dial-prog{stroke-width:6.5}
+.dial-time{font-weight:600}
+.dial-wrap{isolation:isolate}
+.dial-wrap::before{content:"";position:absolute;inset:-22%;border-radius:50%;pointer-events:none;z-index:-1;
+  background:radial-gradient(circle, color-mix(in srgb, var(--accent) 16%, transparent), transparent 62%)}
+body:not(.idle-focus) .focus-card .dial-wrap::before{animation:breathe 5s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.45;transform:scale(.94)}}
+body.focus-mode .focus-card{background:transparent}
+
+/* drawer and modals: frosted */
+.drawer{background:rgba(16,19,26,.92);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+.modal{background:linear-gradient(180deg,#161a23,#11141b);border-color:rgba(255,255,255,.09);border-radius:20px;
+  box-shadow:0 30px 80px rgba(0,0,0,.55)}
+.drawer-back,.modal-back{-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.banner{border-radius:12px}
+
+/* the word of the day, once “More” reveals it: a small quiet card */
+.wotd{border-top:0;margin-top:20px;padding:16px 18px;border-radius:14px;background:rgba(255,255,255,.025);border:1px solid var(--line);max-width:none}
+
+@media(prefers-reduced-motion:reduce){
+  .btn{transition:none;transform:none !important}
+  body:not(.idle-focus) .focus-card .dial-wrap::before{animation:none}
+}
+body.focus-mode .controls{margin-top:20px}
