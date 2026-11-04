@@ -91,13 +91,14 @@ mark { color: inherit; background: linear-gradient(transparent 62%, rgba(124, 14
 .swap.struck s::after { transform: scaleX(1); }
 .swap.swapped s { opacity: 0; transform: translateY(.5em) rotate(4deg); filter: blur(8px); }
 .swap.swapped b { opacity: 1; transform: none; filter: none; }
-.hero .lead { max-width: 600px; margin: 0 auto; }
+.hero .lead { max-width: 600px; margin: 0 auto; text-shadow: 0 2px 24px #0b0d11, 0 0 2px #0b0d11; }
+.hero-h { text-shadow: 0 4px 40px rgba(11, 13, 17, .9); }
 .cta-row { margin: 34px 0 18px; display: flex; justify-content: center; }
 .proof { display: inline-flex; align-items: center; gap: 10px; font: 500 12.5px/1.4 var(--mono); color: var(--dim); margin: 0; }
 .hero-copy > * { opacity: 0; transform: translateY(14px); transition: opacity .8s ease, transform .9s cubic-bezier(.2, .8, .2, 1); }
 .hero.ready .hero-copy > * { opacity: 1; transform: none; }
 .hero.ready .hero-copy > :nth-child(2) { transition-delay: .1s; } .hero.ready .hero-copy > :nth-child(3) { transition-delay: 2.6s; }
-.hero.ready .hero-copy > :nth-child(4) { transition-delay: 2.8s; } .hero.ready .hero-copy > :nth-child(5) { transition-delay: 3s; }
+.hero.ready .hero-copy > :nth-child(4) { transition-delay: 2.8s; } .hero.ready .hero-copy > :nth-child(5) { transition-delay: 3s; } .hero.ready .hero-copy > :nth-child(6) { transition-delay: 3.2s; }
 .scroll-cue { position: absolute; bottom: 28px; left: 50%; width: 26px; height: 42px; margin-left: -13px; border-radius: 14px; border: 1.5px solid var(--line-2); }
 .scroll-cue span { position: absolute; left: 50%; top: 8px; width: 4px; height: 8px; margin-left: -2px; border-radius: 2px; background: var(--accent); animation: cue 1.8s ease-in-out infinite; }
 @keyframes cue { 60% { transform: translateY(14px); opacity: 0; } 61% { transform: none; opacity: 0; } 100% { opacity: 1; } }
@@ -263,11 +264,11 @@ body.film-on #ink { display: none; }
 .faq details a { color: var(--accent-2); }
 
 /* ---------- 11. final ---------- */
-.final { min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 100px 20px; overflow: hidden; }
-.final-ring { position: absolute; left: 50%; top: 50%; width: min(92vw, 700px); height: min(92vw, 700px); transform: translate(-50%, -50%) rotate(-90deg); pointer-events: none; }
+.final { min-height: max(100svh, calc(min(94vw, 90svh, 900px) + 160px)); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 100px 20px; overflow: hidden; }
+.final-ring { position: absolute; left: 50%; top: 50%; width: min(94vw, 90svh, 900px); height: min(94vw, 90svh, 900px); transform: translate(-50%, -50%) rotate(-90deg); pointer-events: none; }
 .final-ring .track { fill: none; stroke: rgba(255, 255, 255, .05); stroke-width: 4; }
 .final-ring .f { fill: none; stroke: url(#gAcc); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 1633.6; stroke-dashoffset: 1633.6; filter: drop-shadow(0 0 14px rgba(124, 140, 255, .7)); }
-.final-h { position: relative; font-size: clamp(72px, 15vw, 200px); font-weight: 800; letter-spacing: -.07em; line-height: .9; margin: 0 0 24px; will-change: transform; }
+.final-h { position: relative; font-size: clamp(58px, 10.5vw, 150px); font-weight: 800; letter-spacing: -.07em; line-height: .9; margin: 0 0 24px; will-change: transform; }
 .final .lead { position: relative; margin-bottom: 34px; }
 .final .btn { position: relative; }
 .footer { width: var(--wrap); margin: 0 auto; padding: 28px 0 40px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; color: var(--faint); font-size: 13px; }
@@ -314,3 +315,68 @@ body.film-on #ink { display: none; }
   .btn { transition: none; transform: none !important; }
 }
 @media (max-width: 640px) { .wave { gap: 4px; max-width: 100%; overflow: hidden; } .wave i { width: 5px; } .hour-stage { padding-top: 96px; } }
+
+/* ---------- hero: a billowing smoke ring (WebGL, see landing.js) ---------- */
+.billow { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+body.gl .hero-ring { display: none; }
+.hf-pill { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 18px; padding: 9px 16px 9px 12px; border-radius: 999px; text-decoration: none; font-size: 14.5px; color: var(--muted);
+  background: rgba(124, 140, 255, .1); border: 1px solid rgba(124, 140, 255, .35); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); transition: border-color .25s, background .25s; }
+.hf-pill b { color: var(--ink); font-weight: 700; }
+.hf-pill:hover { border-color: var(--accent); background: rgba(124, 140, 255, .16); }
+.mic-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex: none; box-shadow: 0 0 0 0 rgba(124, 140, 255, .6); animation: micPulse 1.8s infinite; }
+@keyframes micPulse { 70% { box-shadow: 0 0 0 9px rgba(124, 140, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(124, 140, 255, 0); } }
+.proof { display: flex; justify-content: center; }
+
+/* ---------- hands-free: the key feature ---------- */
+.voice { width: var(--wrap); margin: 0 auto; padding: 130px 0 110px; text-align: center; }
+.voice::before { content: ""; position: absolute; left: 50%; top: 52%; width: 1100px; height: 800px; transform: translate(-50%, -50%); pointer-events: none; z-index: -1;
+  background: radial-gradient(closest-side, rgba(124, 140, 255, .16), transparent); }
+.voice-h { font-size: clamp(40px, 6.6vw, 92px); font-weight: 800; letter-spacing: -.05em; line-height: 1; margin: 0; }
+.voice-head .sub { margin: 22px auto 0; max-width: 600px; font-size: 18px; }
+.voice-stage { display: grid; grid-template-columns: auto 1fr; gap: 60px; align-items: center; margin: 60px auto 0; max-width: 1060px; text-align: left; }
+.orb { position: relative; width: min(420px, 80vw); aspect-ratio: 1; display: grid; place-items: center; }
+.orb canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.orb-btn { position: relative; width: 112px; height: 112px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center; color: #0b0d14;
+  background: linear-gradient(135deg, #d3d8ff, #8f9cff 55%, #5d6cf0); box-shadow: inset 0 2px 0 rgba(255, 255, 255, .6), 0 18px 50px rgba(124, 140, 255, .5); transition: transform .25s cubic-bezier(.2, .9, .3, 1.4), box-shadow .25s; }
+.orb-btn:hover { transform: scale(1.07); box-shadow: inset 0 2px 0 rgba(255, 255, 255, .6), 0 22px 60px rgba(124, 140, 255, .65); }
+.orb-btn:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+.orb-btn svg { width: 44px; height: 44px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.orb-btn svg rect { fill: currentColor; stroke: none; }
+.orb.live .orb-btn { background: linear-gradient(135deg, #ffd2d2, #f08a8a 55%, #d0555a); box-shadow: 0 0 0 10px rgba(224, 123, 123, .18), 0 18px 50px rgba(224, 123, 123, .5); }
+.orb-tip { position: absolute; bottom: 15%; font: 500 11.5px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent-2); pointer-events: none; }
+.orb.live .orb-tip { color: var(--bad-2); }
+.voice-state { display: inline-flex; align-items: center; gap: 9px; margin: 0 0 18px; font: 500 12.5px var(--mono); letter-spacing: .06em; color: var(--dim); }
+.voice-state i { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
+.voice-state.live { color: var(--bad-2); } .voice-state.live i { background: var(--bad); animation: micPulse 1.2s infinite; }
+.voice-state.speak { color: var(--good); } .voice-state.speak i { background: var(--good); }
+.voice .say-line { font-size: clamp(28px, 3.6vw, 50px); text-align: left; min-height: 2.3em; }
+.voice .say-reply { display: inline-flex; margin: 18px 0 0; padding: 12px 18px; border-radius: 16px 16px 16px 4px; font: 500 15.5px var(--mono); color: #bff0dc;
+  background: rgba(94, 201, 160, .1); border: 1px solid rgba(94, 201, 160, .3); }
+.cmds { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 30px; }
+.cmds button { padding: 9px 14px; border-radius: 11px; border: 1px solid var(--line-2); background: rgba(255, 255, 255, .03); color: var(--dim); font: 600 13.5px var(--sans); cursor: pointer; transition: color .2s, border-color .2s, background .2s; }
+.cmds button:hover { color: var(--ink); border-color: rgba(124, 140, 255, .5); }
+.cmds button.on { color: var(--ink); border-color: var(--accent); background: rgba(124, 140, 255, .14); box-shadow: 0 0 18px rgba(124, 140, 255, .25); }
+.voice-fine { margin: 46px 0 0; font: 500 12px var(--mono); color: var(--faint); }
+@media (max-width: 900px) {
+  .voice-stage { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 30px; }
+  .voice .say-line { text-align: center; }
+  .cmds { justify-content: center; }
+}
+
+/* ---------- lens: a tip that rides along under the lens until you move the mouse ---------- */
+.lens-tip { position: absolute; left: var(--x); top: calc(var(--y) + var(--r) + 18px); transform: translateX(-50%); display: inline-flex; align-items: center; gap: 10px; white-space: nowrap;
+  padding: 10px 16px 10px 12px; border-radius: 999px; font-weight: 700; font-size: 14.5px; color: var(--ink); background: rgba(124, 140, 255, .18); border: 1px solid rgba(124, 140, 255, .55);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .4), 0 0 24px rgba(124, 140, 255, .3); transition: opacity .5s; pointer-events: none; z-index: 3; }
+.lens-tip .cur { width: 18px; height: 22px; background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 27'%3E%3Cpath d='M2 2 L2 22 L7.5 17 L11 25 L14.5 23.5 L11 16 L18 16 Z' fill='white' stroke='%23111' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E");
+  animation: nudge 1.4s ease-in-out infinite; }
+@keyframes nudge { 50% { transform: translate(5px, -4px); } }
+.lens-stage.moved .lens-tip, .lens-stage.grown .lens-tip { opacity: 0; }
+.lens-done { position: absolute; left: 0; right: 0; bottom: 9svh; margin: 0; text-align: center; font: 500 13px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent-2); opacity: 0; transition: opacity .6s; }
+.lens-stage.grown .lens-done { opacity: 1; }
+.lens-stage { --r: 210px; }
+@media (max-width: 640px) { .lens-tip { font-size: 13px; } }
+@media (prefers-reduced-motion: reduce) { .mic-dot, .lens-tip .cur { animation: none; } }
+.voice-h .accent { white-space: nowrap; }
+.voice::before { width: min(1100px, 100vw); }
+html, body { overflow-x: clip; }
+.hf-pill { max-width: 100%; flex-wrap: wrap; justify-content: center; }

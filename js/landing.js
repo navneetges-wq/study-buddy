@@ -84,9 +84,79 @@ const hero = $('hero'), swap = $('swap');
     hero.classList.add('ready');
     g.querySelectorAll('.seg').forEach((c) => (c.style.strokeDasharray = c.dataset.d));
     if (STILL) { swap.classList.add('struck', 'swapped'); return; }
-    setTimeout(() => swap.classList.add('struck'), 1500);
+    setTimeout(() => { swap.classList.add('struck'); redPulse = 1; }, 1500);
     setTimeout(() => swap.classList.add('swapped'), 2200);
   }));
+})();
+
+/* ---------- hero: a billowing smoke ring (WebGL) ----------
+   The ring is the hour: indigo smoke for focus, red wisps for the minutes that drifted away.
+   It billows in on load, flares red when "an hour." is struck out, and parts around the cursor.
+   Drawn at a reduced resolution (smoke is soft anyway) and only while the hero is on screen. */
+let redPulse = 0;
+(() => {
+  const cv = $('billow');
+  const gl = cv.getContext('webgl', { antialias: false, alpha: false, premultipliedAlpha: false });
+  if (!gl) { cv.remove(); return; }
+  const VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+  const FS = `precision mediump float;
+  uniform vec2 uRes; uniform float uT, uIn, uRed; uniform vec2 uM;
+  float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+  float n(vec2 p){vec2 i=floor(p),f=fract(p),u=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),u.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),u.x),u.y);}
+  float fbm(vec2 p){float v=0.,a=.5;mat2 m=mat2(1.6,1.2,-1.2,1.6);for(int i=0;i<5;i++){v+=a*n(p);p=m*p;a*=.5;}return v;}
+  void main(){
+    vec2 p=(gl_FragCoord.xy-.5*uRes)/uRes.y;
+    vec2 dm=p-uM; p+=normalize(dm+1e-4)*.07*exp(-dot(dm,dm)*9.);
+    vec2 q=vec2(fbm(p*1.6+vec2(0.,uT*.06)),fbm(p*1.6+vec2(5.2,1.3)-uT*.05));
+    vec2 w=p+.13*(q-.5);
+    float r=length(w); vec2 ca=w/max(r,1e-4);
+    float fit=min(1.,uRes.x/uRes.y*1.05);   // on tall phone screens the ring shrinks to fit the width
+    float R=mix(.24,.47,uIn)*fit;
+    float d=r-R-.06*(fbm(ca*1.3+uT*.07)-.5);
+    float th=(.026+.05*fbm(ca*2.1-uT*.05+3.))*mix(.7,1.,fit);
+    float ring=exp(-d*d/(th*th));
+    float tex=.4+.95*fbm(w*3.3+vec2(uT*.08,-uT*.06));
+    float smoke=fbm(w*2.1+q*1.7+uT*.035)*exp(-abs(d)*4.5)*.6;
+    float dens=(ring*tex+smoke)*uIn;
+    float c1=cos(uT*.06),s1=sin(uT*.06); vec2 cr=mat2(c1,-s1,s1,c1)*ca;
+    float rm=smoothstep(.5,.7,fbm(cr*1.7+q*.8+2.))*(.6+.6*uRed);
+    vec3 ind=vec3(.45,.52,1.),vio=vec3(.66,.56,1.),red=vec3(.95,.42,.45);
+    vec3 col=mix(mix(ind,vio,fbm(w*1.4+uT*.02)),red,clamp(rm,0.,1.));
+    vec3 bg=vec3(.043,.051,.067)+ind*.04*fbm(p*1.3+uT*.02);
+    vec3 c=bg+(col*dens*.78+col*pow(ring,6.)*.12*uIn)*mix(.5,1.,fit*fit);
+    gl_FragColor=vec4(c,1.);
+  }`;
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null; };
+  const vs = sh(gl.VERTEX_SHADER, VS), fs = sh(gl.FRAGMENT_SHADER, FS);
+  if (!vs || !fs) { cv.remove(); return; }
+  const pr = gl.createProgram(); gl.attachShader(pr, vs); gl.attachShader(pr, fs); gl.linkProgram(pr);
+  if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) { cv.remove(); return; }
+  gl.useProgram(pr);
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const U = (k) => gl.getUniformLocation(pr, k);
+  const uRes = U('uRes'), uT = U('uT'), uIn = U('uIn'), uRed = U('uRed'), uM = U('uM');
+  document.body.classList.add('gl');
+  const SCALE = 0.6;
+  let W = 0, Hh = 0;
+  const size = () => { const r = cv.getBoundingClientRect(); W = Math.max(2, Math.round(r.width * SCALE)); Hh = Math.max(2, Math.round(r.height * SCALE)); cv.width = W; cv.height = Hh; gl.viewport(0, 0, W, Hh); };
+  size(); addEventListener('resize', size);
+  const m = { x: 9, y: 9 }, mt = { x: 9, y: 9 };                         // far away until the mouse arrives
+  hero.addEventListener('pointermove', (e) => { const r = cv.getBoundingClientRect(); mt.x = (e.clientX - r.left - r.width / 2) / r.height; mt.y = -(e.clientY - r.top - r.height / 2) / r.height; }, { passive: true });
+  hero.addEventListener('pointerleave', () => { mt.x = 9; mt.y = 9; });
+  let on = true, t0 = performance.now();
+  const frame = (now) => {
+    const t = (now - t0) / 1000;
+    m.x += (mt.x - m.x) * 0.08; m.y += (mt.y - m.y) * 0.08;
+    redPulse *= 0.985;
+    gl.uniform2f(uRes, W, Hh); gl.uniform1f(uT, STILL ? 12 : t + 12); gl.uniform1f(uIn, STILL ? 1 : ease(clamp01(t / 2.2)));
+    gl.uniform1f(uRed, redPulse); gl.uniform2f(uM, m.x, m.y);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    if (on && !STILL) requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+  if ('IntersectionObserver' in window) new IntersectionObserver((e) => { const was = on; on = e[0].isIntersecting; if (on && !was && !STILL) requestAnimationFrame(frame); }).observe(hero);
 })();
 
 /* ---------- the hour, scrubbed by scroll ---------- */
@@ -117,6 +187,7 @@ function paintHour(m) {
 
 /* ---------- the focus lens ---------- */
 const lensSec = $('lens'), stage = $('lens-stage');
+let lensMoved = false, lensGrow = 0, wanderOn = false;
 (() => {
   const PINGS = [
     ['Group chat', '14 new messages', '#3fae86', '#'], ['Calendar', 'Meeting in 10 minutes', '#e0a04f', '▦'], ['Delivery', 'Your order is on the way', '#e07b7b', '◆'],
@@ -130,64 +201,202 @@ const lensSec = $('lens'), stage = $('lens-stage');
     const [x, y] = spots[i];
     return `<div class="ping" style="left:${x}%;top:${y}%;--d:${7 + (i % 5) * 1.7}s;--dl:-${(i * 1.3) % 6}s;--mx2:${(i % 2 ? -1 : 1) * (10 + (i % 4) * 6)}px;--my2:${(i % 3 ? -1 : 1) * (12 + (i % 5) * 4)}px;--rt:${(i % 2 ? -1 : 1) * 1.5}deg"><i style="background:${c}">${ic}</i><div><b>${t}</b><span>${s}</span></div></div>`;
   }).join('');
-  let px = 0.5, py = 0.5, hasPointer = false;
+  let travelled = 0, lx = null, ly = null;
   stage.addEventListener('pointermove', (e) => {
-    if (e.pointerType === 'touch') return;
-    const r = stage.getBoundingClientRect(); px = (e.clientX - r.left) / r.width; py = (e.clientY - r.top) / r.height; hasPointer = true;
-    stage.style.setProperty('--x', `${(px * 100).toFixed(2)}%`); stage.style.setProperty('--y', `${(py * 100).toFixed(2)}%`);
+    if (e.pointerType === 'touch' || lensGrow > 0.02) return;
+    const r = stage.getBoundingClientRect();
+    if (lx !== null) travelled += Math.hypot(e.clientX - lx, e.clientY - ly);
+    lx = e.clientX; ly = e.clientY;
+    if (travelled > 60 && !lensMoved) { lensMoved = true; stage.classList.add('moved'); }
+    if (!lensMoved) return;
+    stage.style.setProperty('--x', `${((e.clientX - r.left) / r.width * 100).toFixed(2)}%`);
+    stage.style.setProperty('--y', `${((e.clientY - r.top) / r.height * 100).toFixed(2)}%`);
   }, { passive: true });
-  if (TOUCH) $('lens-eyebrow').textContent = 'Keep scrolling';
+  if (TOUCH) $('lens-tip-t').textContent = 'Keep scrolling — find the calm';
+  // until the visitor moves the mouse, the lens wanders on its own, so it is obviously alive
+  let t0 = performance.now();
+  const wander = (now) => {
+    if (!wanderOn) return;
+    if (!lensMoved && lensGrow <= 0.02 && !STILL) {
+      const t = (now - t0) / 1000;
+      stage.style.setProperty('--x', `${(50 + 16 * Math.sin(t * 0.55)).toFixed(2)}%`);
+      stage.style.setProperty('--y', `${(46 + 9 * Math.sin(t * 0.9 + 1)).toFixed(2)}%`);
+    }
+    requestAnimationFrame(wander);
+  };
+  if ('IntersectionObserver' in window) new IntersectionObserver((e) => { const was = wanderOn; wanderOn = e[0].isIntersecting; if (wanderOn && !was) requestAnimationFrame(wander); }).observe(stage);
 })();
 let lastR = -1;
 function paintLens(k) {
-  // the lens starts small, then grows until focus fills the screen
   const full = Math.hypot(innerWidth, innerHeight);
-  const grow = ease(clamp01((k - 0.45) / 0.45));
-  const base = TOUCH ? Math.min(innerWidth * 0.42, 170) : 160;
-  const r = Math.round(base + (full - base) * grow);
+  lensGrow = ease(clamp01((k - 0.5) / 0.42));
+  const base = TOUCH ? Math.min(innerWidth * 0.44, 190) : 210;
+  const r = Math.round(base + (full - base) * lensGrow);
   if (r === lastR) return; lastR = r;
   stage.style.setProperty('--r', `${r}px`);
-  stage.style.setProperty('--ro', (1 - grow).toFixed(3));
-  if (grow > 0.02) { stage.style.setProperty('--x', `${50}%`); stage.style.setProperty('--y', `${50}%`); }
-  $('lens-eyebrow').textContent = grow > 0.6 ? 'Focus is a spotlight. Lockin keeps it on.' : TOUCH ? 'Keep scrolling' : 'Move your cursor';
+  stage.style.setProperty('--ro', (1 - lensGrow).toFixed(3));
+  if (lensGrow > 0.02) { stage.style.setProperty('--x', '50%'); stage.style.setProperty('--y', '50%'); }
+  stage.classList.toggle('grown', lensGrow > 0.6);
 }
 
-/* ---------- say it ---------- */
+/* ---------- hands-free: a live demo, and a real one you can talk to ---------- */
 (() => {
-  const LINES = [
-    ['“Lockin, start 45 minutes.”', '→ Starting 45 minutes. Go.'],
-    ['“I got distracted by my phone.”', '→ Logged: phone, at 14 minutes.'],
-    ['“How am I doing?”', '→ 22 minutes focused, one tab leave.'],
-    ['“Add five minutes.”', '→ Done. 9 minutes left.'],
-    ['“Play rain.”', '→ Rain is on.'],
+  const DEMO = [
+    ['Lockin, start 45 minutes', 'Starting 45 minutes. Go.'],
+    ['Lockin, I got distracted by my phone', 'Logged — phone, at 14 minutes.'],
+    ['Lockin, how am I doing?', '22 minutes focused, one tab leave. Keep going.'],
+    ['Lockin, pause', 'Paused. Say “resume” when you’re back.'],
+    ['Lockin, add five minutes', 'Added 5 minutes. 9 to go.'],
+    ['Lockin, play rain', 'Rain is on.'],
+    ['Lockin, take a five minute break', 'Take five. I’ll call you back.'],
+    ['Lockin, I have 35 minutes', 'Shaping 35 minutes into blocks.'],
+    ['Lockin, plan 40 minutes at 8pm', 'Planned for 8 PM. I’ll remind you.'],
+    ['Lockin, how long left?', '18 minutes left.'],
+    ['Lockin, create a room', 'Room created. Invite link copied.'],
+    ['Lockin, finish', 'Done. Here’s your autopsy.'],
   ];
-  const text = $('say-text'), reply = $('say-reply'), wave = $('wave');
-  wave.innerHTML = Array.from({ length: 34 }, () => '<i></i>').join('');
-  const bars = [...wave.children];
-  let talking = false, on = false;
+  const text = $('say-text'), reply = $('say-reply'), replyT = $('say-reply-t'), state = $('voice-state'), orb = $('orb'), btn = $('orb-btn'), tip = $('orb-tip');
+  const cmds = $('cmds');
+  cmds.innerHTML = DEMO.map(([s], i) => `<button type="button" data-i="${i}">${s.replace(/^Lockin, /, '')}</button>`).join('');
+  const chips = [...cmds.children];
+  const setState = (cls, msg) => { state.className = 'voice-state ' + (cls || ''); state.lastChild.textContent = msg; };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-  async function loop() {
-    for (let i = 0; ; i = (i + 1) % LINES.length) {
-      const [say, ans] = LINES[i];
-      talking = true;
-      for (let c = 1; c <= say.length; c++) { text.textContent = say.slice(0, c); await sleep(38); }
-      talking = false;
-      await sleep(350); reply.textContent = ans; reply.classList.add('on');
-      await sleep(1900); reply.classList.remove('on');
-      for (let c = say.length; c >= 0; c -= 2) { text.textContent = say.slice(0, c); await sleep(12); }
-      await sleep(300);
+
+  /* the orb: a ring whose edge moves with the voice (synthetic in the demo, the real mic when live) */
+  const cv = $('orb-c'), cx = cv.getContext('2d');
+  let level = 0, target = 0, mode = 'idle', visible = false, analyser = null, buf = null;
+  function drawOrb(now) {
+    if (!visible) return;
+    const t = now / 1000;
+    if (analyser) { analyser.getByteTimeDomainData(buf); let s = 0; for (let i = 0; i < buf.length; i++) { const v = (buf[i] - 128) / 128; s += v * v; } target = Math.min(1, Math.sqrt(s / buf.length) * 5); }
+    else if (mode === 'talk') target = 0.45 + 0.4 * Math.abs(Math.sin(t * 9)) * Math.abs(Math.sin(t * 3.3 + 1));
+    else if (mode === 'reply') target = 0.25 + 0.2 * Math.abs(Math.sin(t * 7));
+    else target = 0.05 + 0.04 * Math.sin(t * 1.6);
+    level += (target - level) * 0.18;
+    const W = cv.width, R = W * 0.33;
+    cx.clearRect(0, 0, W, W);
+    const col = orb.classList.contains('live') ? [224, 123, 123] : mode === 'reply' ? [94, 201, 160] : [124, 140, 255];
+    for (let layer = 0; layer < 3; layer++) {
+      cx.beginPath();
+      for (let i = 0; i <= 160; i++) {
+        const a = (i / 160) * Math.PI * 2;
+        const wob = Math.sin(a * 3 + t * 2 + layer) * 0.5 + Math.sin(a * 7 - t * 3.1 + layer * 2) * 0.3 + Math.sin(a * 13 + t * 5) * 0.2;
+        const r = R + layer * 10 + wob * (8 + 46 * level) * (1 - layer * 0.25);
+        const x = W / 2 + Math.cos(a) * r, y = W / 2 + Math.sin(a) * r;
+        i ? cx.lineTo(x, y) : cx.moveTo(x, y);
+      }
+      cx.closePath();
+      cx.strokeStyle = `rgba(${col},${[0.95, 0.45, 0.2][layer]})`;
+      cx.lineWidth = [5, 3, 2][layer];
+      cx.shadowColor = `rgba(${col},.8)`; cx.shadowBlur = layer ? 0 : 24;
+      cx.stroke();
     }
+    const g = cx.createRadialGradient(W / 2, W / 2, R * 0.2, W / 2, W / 2, R * 1.4);
+    g.addColorStop(0, `rgba(${col},${(0.12 + 0.22 * level).toFixed(3)})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+    cx.shadowBlur = 0; cx.fillStyle = g; cx.beginPath(); cx.arc(W / 2, W / 2, R * 1.4, 0, Math.PI * 2); cx.fill();
+    requestAnimationFrame(drawOrb);
   }
-  function waveLoop(t) {
-    bars.forEach((b, j) => {
-      const h = talking ? 14 + 86 * Math.abs(Math.sin(j * 0.7 + t / 90)) * (0.35 + 0.65 * Math.abs(Math.sin(j * 1.9 + t / 230))) : 8 + 6 * Math.abs(Math.sin(j * 0.5 + t / 600));
-      b.style.height = `${h.toFixed(0)}px`;
-    });
-    if (on) requestAnimationFrame(waveLoop);
+  if ('IntersectionObserver' in window) new IntersectionObserver((e) => { const was = visible; visible = e[0].isIntersecting; if (visible && !was) requestAnimationFrame(drawOrb); }).observe(orb);
+  else { visible = true; requestAnimationFrame(drawOrb); }
+
+  /* the self-playing demo (a click on a chip plays that one) */
+  let run = 0, busy = false;
+  async function play(i, token) {
+    const [say, ans] = DEMO[i];
+    chips.forEach((c, j) => c.classList.toggle('on', j === i));
+    reply.classList.remove('on'); mode = 'talk';
+    for (let c = 1; c <= say.length; c++) { if (token !== run) return; text.textContent = `“${say.slice(0, c)}`; await sleep(36); }
+    text.textContent = `“${say}”`; mode = 'idle';
+    await sleep(320); if (token !== run) return;
+    replyT.textContent = ans; reply.classList.add('on'); mode = 'reply';
+    await sleep(1900); if (token !== run) return;
+    mode = 'idle';
   }
-  if (STILL) { text.textContent = LINES[0][0]; reply.textContent = LINES[0][1]; reply.classList.add('on'); return; }
-  if ('IntersectionObserver' in window) new IntersectionObserver((e) => { const was = on; on = e[0].isIntersecting; if (on && !was) requestAnimationFrame(waveLoop); }).observe($('say'));
-  inView($('say'), loop, 0.4);
+  async function demo(from = 0) {
+    const token = ++run;
+    for (let i = from; token === run; i = (i + 1) % DEMO.length) { await play(i, token); if (token !== run) return; await sleep(500); }
+  }
+  chips.forEach((c) => c.addEventListener('click', () => { if (busy) return; const i = +c.dataset.i; const token = ++run; play(i, token).then(() => { if (token === run) setTimeout(() => token === run && demo((i + 1) % DEMO.length), 2500); }); }));
+  if (STILL) { text.textContent = `“${DEMO[0][0]}”`; replyT.textContent = DEMO[0][1]; reply.classList.add('on'); }
+  else inView($('voice'), () => demo(0), 0.3);
+
+  /* the real thing: the browser's speech recognition + Lockin's own command grammar (voice-control.js) */
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const answer = (p) => {
+    const m = p && p.min;
+    switch (p && p.intent) {
+      case 'start': return `Starting ${m || 25} minutes. Go.`;
+      case 'pause': return 'Paused. Say “resume” when you’re back.';
+      case 'resume': return 'Back on the clock.';
+      case 'extend': return `Added ${m || 5} minutes.`;
+      case 'finish': return 'Done. Here’s your autopsy.';
+      case 'discard': return 'Session discarded.';
+      case 'break': return `Take ${m || 5}. I’ll call you back.`;
+      case 'skipbreak': return 'Break skipped. Back to it.';
+      case 'distract': return `Logged — ${p.type === 'other' ? 'a distraction' : p.type}.`;
+      case 'sound': return `Playing ${p.which}.`;
+      case 'sound.off': return 'Sound off.';
+      case 'volume': return p.delta > 0 ? 'Louder.' : 'Quieter.';
+      case 'shape': return `Shaping ${m} minutes into blocks.`;
+      case 'plan': return 'Planned. I’ll remind you.';
+      case 'ask.time': return '18 minutes left.';
+      case 'ask.status': return '22 minutes focused, one tab leave. Keep going.';
+      case 'ask.streak': return 'You’re on a 3-day streak.';
+      case 'ask.level': return 'Level 4. 120 XP to the next.';
+      case 'ask.quote': return 'You don’t have to be great to start.';
+      case 'ask.weather': return 'Clear tonight — a good night to focus.';
+      case 'room.create': return 'Room created. Invite link copied.';
+      case 'room.nudge': return 'Nudged your partner.';
+      case 'goal': return `Daily goal set to ${m} minutes.`;
+      case 'mood': return 'Noted. Saved with the session.';
+      case 'help': case 'wake': return 'Try: “Lockin, start 45 minutes.”';
+      case 'view': return `Opening ${p.view}.`;
+      default: return null;
+    }
+  };
+  const speak = (s) => new Promise((done) => {
+    try {
+      const tts = window.speechSynthesis; if (!tts) return done();
+      tts.cancel(); const u = new SpeechSynthesisUtterance(s); u.rate = 1.05; u.onend = done; u.onerror = done; tts.speak(u); setTimeout(done, 6000);
+    } catch (e) { done(); }
+  });
+  let rec = null, stream = null, actx = null;
+  const stopMic = () => { try { stream && stream.getTracks().forEach((t) => t.stop()); } catch (e) {} stream = null; analyser = null; try { actx && actx.close(); } catch (e) {} actx = null; };
+  const finishLive = (resume = true) => { orb.classList.remove('live'); tip.textContent = 'Tap & speak'; busy = false; stopMic(); if (resume) setTimeout(() => !busy && demo(0), 5000); };
+  btn.addEventListener('click', async () => {
+    if (busy) { try { rec && rec.stop(); } catch (e) {} return; }
+    if (!SR) { setState('', 'Your browser can’t do speech — try Chrome, Edge or Safari.'); return; }
+    busy = true; run++; mode = 'idle'; reply.classList.remove('on'); chips.forEach((c) => c.classList.remove('on'));
+    text.textContent = ''; orb.classList.add('live'); tip.textContent = 'Listening…';
+    setState('live', 'Listening — say “Lockin, start 45 minutes”');
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = actx.createAnalyser(); analyser.fftSize = 1024; buf = new Uint8Array(analyser.fftSize);
+      actx.createMediaStreamSource(stream).connect(analyser);
+    } catch (e) { stopMic(); }
+    rec = new SR(); rec.lang = navigator.language || 'en-US'; rec.interimResults = true; rec.maxAlternatives = 3; rec.continuous = false;
+    let heard = false;
+    rec.onresult = async (ev) => {
+      const res = ev.results[ev.results.length - 1];
+      text.textContent = `“${res[0].transcript.trim()}`;
+      if (!res.isFinal) return;
+      heard = true; text.textContent = `“${res[0].transcript.trim()}”`;
+      const parsed = VoiceControl.parseBest([...res].map((alt) => alt.transcript));
+      const said = answer(parsed);
+      stopMic(); orb.classList.remove('live');
+      replyT.textContent = said || 'Didn’t catch a command — try “Lockin, start 45 minutes.”'; reply.classList.add('on');
+      setState('speak', said ? 'Understood — this is how Lockin answers' : 'Not a command I know yet');
+      mode = 'reply'; if (said) await speak(said); mode = 'idle';
+      setState('', 'Tap the mic to try another');
+    };
+    rec.onerror = (ev) => {
+      const why = { 'not-allowed': 'Microphone blocked — allow it in the address bar to try.', 'service-not-allowed': 'Microphone blocked — allow it in the address bar to try.', 'no-speech': 'Didn’t hear anything — tap and try again.', network: 'Speech needs a connection — try again online.' }[ev.error];
+      setState('', why || 'Something went wrong — tap to try again.');
+    };
+    rec.onend = () => { if (!heard && state.classList.contains('live')) setState('', 'Didn’t hear anything — tap and try again.'); finishLive(); };
+    try { rec.start(); } catch (e) { finishLive(); }
+  });
 })();
 
 /* ---------- duel race ---------- */
