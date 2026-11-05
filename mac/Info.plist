@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleIdentifier</key><string>com.navneetges.lockin</string>
+  <key>CFBundleName</key><string>Lockin</string>
+  <key>CFBundleDisplayName</key><string>Lockin</string>
+  <key>CFBundleExecutable</key><string>Lockin</string>
+  <key>CFBundleIconFile</key><string>Lockin</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleShortVersionString</key><string>1.0</string>
+  <key>CFBundleVersion</key><string>1</string>
+  <key>LSMinimumSystemVersion</key><string>13.0</string>
+  <key>LSApplicationCategoryType</key><string>public.app-category.productivity</string>
+  <key>NSHighResolutionCapable</key><true/>
+  <key>NSHumanReadableCopyright</key><string>Lockin — your partner in deep work.</string>
+  <key>NSMicrophoneUsageDescription</key><string>Lockin listens for hands-free commands like “Lockin, start 45 minutes” and for your one-minute voice journal.</string>
+  <key>NSSpeechRecognitionUsageDescription</key><string>Lockin turns what you say into commands. It uses on-device recognition when your Mac supports it.</string>
+</dict>
+</plist>

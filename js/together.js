@@ -22,7 +22,8 @@ const Together = (function () {
     const s = str.replace(/-/g, '+').replace(/_/g, '/');
     return JSON.parse(decodeURIComponent(escape(atob(s + '==='.slice((s.length + 3) % 4)))));
   };
-  const base = () => location.origin + location.pathname;
+  // inside the Mac app the page lives at lockin://, so invite links point at the public web app instead
+  const base = () => window.LOCKIN_PUBLIC_URL || location.origin + location.pathname;
   const rid = () => Math.random().toString(36).slice(2, 8);
 
   /* ---------------------------- invite links ---------------------------- */
