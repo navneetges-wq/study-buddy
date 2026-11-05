@@ -1,0 +1,13 @@
+"$schema" = "https://conductor.build/schemas/settings.repo.schema.json"
+
+# Lockin is plain HTML/CSS/JS: nothing to install. "Run" serves the folder on the workspace's own port.
+[scripts]
+run = "python3 -m http.server ${CONDUCTOR_PORT:-8781}"
+
+[[preview_urls]]
+name = "Landing page"
+url = "http://localhost:$CONDUCTOR_PORT/landing.html"
+
+[[preview_urls]]
+name = "App"
+url = "http://localhost:$CONDUCTOR_PORT/index.html"
