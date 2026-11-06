@@ -380,3 +380,15 @@ body.gl .hero-ring { display: none; }
 .voice::before { width: min(1100px, 100vw); }
 html, body { overflow-x: clip; }
 .hf-pill { max-width: 100%; flex-wrap: wrap; justify-content: center; }
+
+/* "Tap to speak": a clear pill just under the mic, inside the ring, and a pulse that says "press me" */
+.orb-tip { bottom: auto; top: calc(50% + 70px); left: 50%; transform: translateX(-50%); white-space: nowrap; z-index: 2;
+  font: 700 13px var(--sans); letter-spacing: .02em; text-transform: none; color: var(--ink);
+  padding: 7px 14px; border-radius: 999px; background: rgba(14, 16, 24, .92); border: 1px solid rgba(124, 140, 255, .55); box-shadow: 0 6px 18px rgba(0, 0, 0, .45); }
+.orb.live .orb-tip { color: var(--bad-2); border-color: rgba(224, 123, 123, .6); }
+.orb-btn { z-index: 2; }
+.orb-btn::before { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(124, 140, 255, .7); animation: tapPulse 2.2s ease-out infinite; pointer-events: none; }
+.orb.live .orb-btn::before { border-color: rgba(224, 123, 123, .8); animation-duration: 1.2s; }
+@keyframes tapPulse { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(1.6); opacity: 0; } }
+@media (max-width: 640px) { .orb-btn { width: 92px; height: 92px; } .orb-btn svg { width: 36px; height: 36px; } .orb-tip { top: calc(50% + 64px); font-size: 12px; } }
+@media (prefers-reduced-motion: reduce) { .orb-btn::before { animation: none; opacity: 0; } }

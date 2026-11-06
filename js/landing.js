@@ -362,12 +362,12 @@ function paintLens(k) {
   });
   let rec = null, stream = null, actx = null;
   const stopMic = () => { try { stream && stream.getTracks().forEach((t) => t.stop()); } catch (e) {} stream = null; analyser = null; try { actx && actx.close(); } catch (e) {} actx = null; };
-  const finishLive = (resume = true) => { orb.classList.remove('live'); tip.textContent = 'Tap & speak'; busy = false; stopMic(); if (resume) setTimeout(() => !busy && demo(0), 5000); };
+  const finishLive = (resume = true) => { orb.classList.remove('live'); tip.textContent = 'Tap to speak'; busy = false; stopMic(); if (resume) setTimeout(() => !busy && demo(0), 5000); };
   btn.addEventListener('click', async () => {
     if (busy) { try { rec && rec.stop(); } catch (e) {} return; }
     if (!SR) { setState('', 'Your browser can’t do speech — try Chrome, Edge or Safari.'); return; }
     busy = true; run++; mode = 'idle'; reply.classList.remove('on'); chips.forEach((c) => c.classList.remove('on'));
-    text.textContent = ''; orb.classList.add('live'); tip.textContent = 'Listening…';
+    text.textContent = ''; orb.classList.add('live'); tip.textContent = 'Listening… tap to stop';
     setState('live', 'Listening — say “Lockin, start 45 minutes”');
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
